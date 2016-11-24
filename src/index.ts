@@ -11,6 +11,7 @@ import * as ui_  from './ui';
 import * as utils_  from './utils';
 import * as ui_dialogs_ from './ui_dialogs';
 import LineUp from './lineup';
+import {Selection} from 'd3-selection';
 
 export {deriveColors} from './lineup';
 /**
@@ -55,7 +56,7 @@ export function createLocalStorage(data: any[], columns: model_.IColumnDesc[], o
   return new provider_.LocalDataProvider(data, columns, options);
 }
 
-export function create(data: provider_.DataProvider, container: d3.Selection<any> | Element, config: any = {}) {
+export function create(data: provider_.DataProvider, container: Selection<Element, any, Element, any> | Element, config: any = {}) {
   return new LineUp(container, data, config);
 }
 

@@ -8,7 +8,7 @@ import NumberColumn, {INumberColumn} from '../model/NumberColumn';
 import Ranking from '../model/Ranking';
 import {ICategoricalColumn} from '../model/CategoricalColumn';
 import {merge} from '../utils';
-import * as d3 from 'd3';
+import {mean as d3mean, max as d3max, histogram, extent as d3extent, range as d3range} from 'd3-array';
 import {IStatsBuilder, IDataProviderOptions, IDataRow} from './ADataProvider';
 import ACommonDataProvider from './ACommonDataProvider';
 
@@ -31,18 +31,18 @@ function computeStats(arr: any[], indices: number[], acc: (row: any, index:numbe
     };
   }
   const indexAccessor = (a, i) =>acc(a, indices[i]);
-  const hist = d3.layout.histogram().value(indexAccessor);
+  const hist = histogram().value(indexAccessor);
   if (range) {
-    hist.range(() => range);
+    hist.domain(range);
   }
-  const ex = d3.extent(arr, indexAccessor);
+  const ex = d3extent(arr, indexAccessor);
   const hist_data = hist(arr);
   return {
     min: ex[0],
     max: ex[1],
-    mean: d3.mean(arr, indexAccessor),
+    mean: d3mean(arr, indexAccessor),
     count: arr.length,
-    maxBin: d3.max(hist_data, (d) => d.y),
+    maxBin: d3max(hist_data, (d) => d.length),
     hist: hist_data
   };
 }
@@ -237,7 +237,7 @@ export default class LocalDataProvider extends ACommonDataProvider {
     //case insensitive search
     search = typeof search === 'string' ? search.toLowerCase() : search;
     const f = typeof search === 'string' ? (v: string) => v.toLowerCase().indexOf((<string>search)) >= 0 : (<RegExp>search).test.bind(search);
-    const indices = d3.range(this.data.length).filter((i) => f(col.getLabel(this.data[i], i)));
+    const indices = d3range(this.data.length).filter((i) => f(col.getLabel(this.data[i], i)));
 
     this.jumpToNearest(indices);
   }

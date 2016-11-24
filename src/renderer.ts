@@ -11,7 +11,7 @@ import StackColumn from './model/StackColumn';
 import CategoricalColumn from './model/CategoricalColumn';
 import {INumberColumn} from './model/NumberColumn';
 import {forEach, attr, clipText, ITextRenderHints} from './utils';
-import {hsl} from 'd3';
+import {hsl} from 'd3-color';
 import {IDataRow} from './provider/ADataProvider';
 /**
  * context for rendering, wrapped as an object for easy extensibility
@@ -600,7 +600,7 @@ export class CategoricalCellRenderer implements ICellRendererFactory {
  * @param columns
  * @param helperType
  */
-export function matchColumns(node: SVGGElement | HTMLElement, columns: { column: Column, renderer: IDOMCellRenderer<any> }[], helperType = 'svg') {
+export function matchColumns(node: SVGElement | HTMLElement, columns: { column: Column, renderer: IDOMCellRenderer<any> }[], helperType = 'svg') {
   if (node.childElementCount === 0) {
     // initial call fast method
     node.innerHTML = columns.map((c) => c.renderer.template).join('');

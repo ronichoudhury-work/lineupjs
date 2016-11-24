@@ -60,7 +60,7 @@ export interface IStatistics {
   mean: number;
   count: number;
   maxBin: number;
-  hist: { x: number; dx: number; y: number;}[];
+  hist: { x0: number; x1: number; length: number;}[];
 }
 
 export interface ICategoricalStatistics {

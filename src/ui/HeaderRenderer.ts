@@ -2,7 +2,10 @@
  * Created by Samuel Gratzl on 14.08.2015.
  */
 
-import * as d3 from 'd3';
+import {Selection, select, mouse as d3mouse} from 'd3-selection';
+import {scaleLinear, scaleBand} from 'd3-scale';
+import {range as d3range} from 'd3-array';
+import {drag as d3drag} from 'd3-drag';
 import {merge, dropAble, delayedCall, forEach} from '../utils';
 import Column, {IStatistics, ICategoricalStatistics, IFlatColumn} from '../model/Column';
 import StringColumn from '../model/StringColumn';
@@ -16,6 +19,7 @@ import LinkColumn from '../model/LinkColumn';
 import ScriptColumn from '../model/ScriptColumn';
 import DataProvider from '../provider/ADataProvider';
 import {
+  ColumnSelection,
   filterDialogs,
   openEditWeightsDialog,
   openEditLinkDialog,
@@ -23,7 +27,6 @@ import {
   openRenameDialog,
   openSearchDialog
 } from '../ui_dialogs';
-import ADataProvider from "../provider/ADataProvider";
 
 /**
  * utility function to generate the tooltip text with description
@@ -38,7 +41,7 @@ export function toFullTooltip(col: { label: string, description?: string}) {
 }
 
 export interface IRankingHook {
-  ($node: d3.Selection<Ranking>): void;
+  ($node: Selection<HTMLElement, Ranking, any, void>): void;
 }
 
 export function dummyRankingButtonHook() {
@@ -54,7 +57,7 @@ export interface IHeaderRendererOptions {
   manipulative?: boolean;
   histograms?: boolean;
 
-  filterDialogs?: { [type: string]: (col: Column, $header: d3.Selection<Column>, data: ADataProvider, idPrefix: string)=>void };
+  filterDialogs?: { [type: string]: (col: Column, $header: ColumnSelection, data: DataProvider, idPrefix: string)=>void };
   linkTemplates?: string[];
   searchAble?(col: Column): boolean;
   sortOnLabel?: boolean;
@@ -93,29 +96,29 @@ export default class HeaderRenderer {
     rankingButtons: <IRankingHook>dummyRankingButtonHook
   };
 
-  $node: d3.Selection<any>;
+  $node: Selection<HTMLElement, any, Element, null>;
 
   private histCache = new Map<string,Promise<IStatistics|ICategoricalStatistics>>();
 
-  private dragHandler = d3.behavior.drag<Column>()
+  private dragHandler = d3drag<HTMLElement, Column>()
   //.origin((d) => d)
     .on('dragstart', function () {
-      d3.select(this).classed('dragging', true);
-      (<any>d3.event).sourceEvent.stopPropagation();
-      (<any>d3.event).sourceEvent.preventDefault();
+      select(this).classed('dragging', true);
+      (<any>event).sourceEvent.stopPropagation();
+      (<any>event).sourceEvent.preventDefault();
     })
     .on('drag', function (d) {
       //the new width
-      var newValue = Math.max(d3.mouse(this.parentNode)[0], 2);
+      var newValue = Math.max(d3mouse(<HTMLElement>this.parentNode)[0], 2);
       d.setWidth(newValue);
-      (<any>d3.event).sourceEvent.stopPropagation();
-      (<any>d3.event).sourceEvent.preventDefault();
+      (<any>event).sourceEvent.stopPropagation();
+      (<any>event).sourceEvent.preventDefault();
     })
     .on('dragend', function (d) {
-      d3.select(this).classed('dragging', false);
-      (<any>d3.event).sourceEvent.stopPropagation();
+      select(this).classed('dragging', false);
+      (<any>event).sourceEvent.stopPropagation();
 
-      (<any>d3.event).sourceEvent.preventDefault();
+      (<any>event).sourceEvent.preventDefault();
     });
 
   private dropHandler = dropAble(['application/caleydo-lineup-column-ref', 'application/caleydo-lineup-column'], (data, d: Column, copy) => {
@@ -144,7 +147,7 @@ export default class HeaderRenderer {
   constructor(private data: DataProvider, parent: Element, options: IHeaderRendererOptions) {
     merge(this.options, options);
 
-    this.$node = d3.select(parent).append('div').classed('lu-header', true);
+    this.$node = select(parent).append<HTMLElement>('div').classed('lu-header', true);
     this.$node.append('div').classed('drop', true).call(this.dropHandler);
 
     this.changeDataStorage(data);
@@ -296,15 +299,15 @@ export default class HeaderRenderer {
     if (this.options.autoRotateLabels) {
       //check if we have overflows
       var rotatedAny = false;
-      this.$node.selectAll('div.header')
-        .style('height', height + 'px').select('div.lu-label').each(function (d) {
+      this.$node.selectAll<HTMLElement, Column>('div.header')
+        .style('height', height + 'px').select<HTMLElement>('div.lu-label').each(function (d: Column) {
         const w = this.querySelector('span.lu-label').offsetWidth;
         const actWidth = d.getWidth();
         if (w > (actWidth + 30)) { //rotate
-          d3.select(this).style('transform', `rotate(${that.options.rotationDegree}deg)`);
+          select(this).style('transform', `rotate(${that.options.rotationDegree}deg)`);
           rotatedAny = true;
         } else {
-          d3.select(this).style('transform', null);
+          select(this).style('transform', null);
         }
       });
       this.$node.selectAll('div.header').style('margin-top', rotatedAny ? this.options.rotationHeight + 'px' : null);
@@ -313,7 +316,7 @@ export default class HeaderRenderer {
     this.$node.style('height', height + 'px');
   }
 
-  private createToolbar($node: d3.Selection<Column>) {
+  private createToolbar($node: ColumnSelection) {
     const filterDialogs = this.options.filterDialogs,
       provider = this.data,
       that = this;
@@ -322,39 +325,39 @@ export default class HeaderRenderer {
       $multilevel = $node.filter(d=> isMultiLevelColumn(d));
 
     //edit weights
-    $stacked.append('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (d) {
-      openEditWeightsDialog(<StackColumn>d, d3.select(this.parentNode.parentNode));
-      (<MouseEvent>d3.event).stopPropagation();
+    $stacked.append<HTMLElement>('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (d) {
+      openEditWeightsDialog(<StackColumn>d, select<HTMLElement, Column>(this.parentElement.parentElement));
+      (<MouseEvent>event).stopPropagation();
     });
     //rename
-    $regular.append('i').attr('class', 'fa fa-pencil-square-o').attr('title', 'Rename').on('click', function (d) {
-      openRenameDialog(d, d3.select(this.parentNode.parentNode));
-      (<MouseEvent>d3.event).stopPropagation();
+    $regular.append<HTMLElement>('i').attr('class', 'fa fa-pencil-square-o').attr('title', 'Rename').on('click', function (d) {
+      openRenameDialog(d, select<HTMLElement, Column>(this.parentElement.parentElement));
+      (<MouseEvent>event).stopPropagation();
     });
     //clone
-    $regular.append('i').attr('class', 'fa fa-code-fork').attr('title', 'Generate Snapshot').on('click', function (d) {
+    $regular.append<HTMLElement>('i').attr('class', 'fa fa-code-fork').attr('title', 'Generate Snapshot').on('click', function (d) {
       provider.takeSnapshot(d);
-      (<MouseEvent>d3.event).stopPropagation();
+      (<MouseEvent>event).stopPropagation();
     });
     //edit link
-    $node.filter((d) => d instanceof LinkColumn).append('i').attr('class', 'fa fa-external-link').attr('title', 'Edit Link Pattern').on('click', function (d) {
-      openEditLinkDialog(<LinkColumn>d, d3.select(this.parentNode.parentNode), [].concat((<any>d.desc).templates || [], that.options.linkTemplates), that.options.idPrefix);
-      (<MouseEvent>d3.event).stopPropagation();
+    $node.filter((d) => d instanceof LinkColumn).append<HTMLElement>('i').attr('class', 'fa fa-external-link').attr('title', 'Edit Link Pattern').on('click', function (d) {
+      openEditLinkDialog(<LinkColumn>d, select<HTMLElement, Column>(this.parentElement.parentElement), [].concat((<any>d.desc).templates || [], that.options.linkTemplates), that.options.idPrefix);
+      (<MouseEvent>event).stopPropagation();
     });
     //edit script
-    $node.filter((d) => d instanceof ScriptColumn).append('i').attr('class', 'fa fa-gears').attr('title', 'Edit Combine Script').on('click', function (d) {
-      openEditScriptDialog(<ScriptColumn>d, d3.select(this.parentNode.parentNode));
-      (<MouseEvent>d3.event).stopPropagation();
+    $node.filter((d) => d instanceof ScriptColumn).append<HTMLElement>('i').attr('class', 'fa fa-gears').attr('title', 'Edit Combine Script').on('click', function (d) {
+      openEditScriptDialog(<ScriptColumn>d, select<HTMLElement, Column>(this.parentElement.parentElement));
+      (<MouseEvent>event).stopPropagation();
     });
     //filter
-    $node.filter((d) => filterDialogs.hasOwnProperty(d.desc.type)).append('i').attr('class', 'fa fa-filter').attr('title', 'Filter').on('click', function (d) {
-      filterDialogs[d.desc.type](d, d3.select(this.parentNode.parentNode), provider, that.options.idPrefix);
-      (<MouseEvent>d3.event).stopPropagation();
+    $node.filter((d) => filterDialogs.hasOwnProperty(d.desc.type)).append<HTMLElement>('i').attr('class', 'fa fa-filter').attr('title', 'Filter').on('click', function (d) {
+      filterDialogs[d.desc.type](d, select<HTMLElement, Column>(this.parentElement.parentElement), provider, that.options.idPrefix);
+      (<MouseEvent>event).stopPropagation();
     });
     //search
-    $node.filter((d) => this.options.searchAble(d)).append('i').attr('class', 'fa fa-search').attr('title', 'Search').on('click', function (d) {
-      openSearchDialog(d, d3.select(this.parentNode.parentNode), provider);
-      (<MouseEvent>d3.event).stopPropagation();
+    $node.filter((d) => this.options.searchAble(d)).append<HTMLElement>('i').attr('class', 'fa fa-search').attr('title', 'Search').on('click', function (d) {
+      openSearchDialog(d, select<HTMLElement, Column>(this.parentElement.parentElement), provider);
+      (<MouseEvent>event).stopPropagation();
     });
     //collapse
     $regular.append('i')
@@ -364,10 +367,10 @@ export default class HeaderRenderer {
       .attr('title', '(Un)Collapse')
       .on('click', function (d: Column) {
         d.setCompressed(!d.getCompressed());
-        d3.select(this)
+        select(this)
           .classed('fa-toggle-left', !d.getCompressed())
           .classed('fa-toggle-right', d.getCompressed());
-        (<MouseEvent>d3.event).stopPropagation();
+        (<MouseEvent>event).stopPropagation();
       });
     //compress
     $multilevel.append('i')
@@ -377,10 +380,10 @@ export default class HeaderRenderer {
       .attr('title', 'Compress/Expand')
       .on('click', function (d: IMultiLevelColumn) {
         d.setCollapsed(!d.getCollapsed());
-        d3.select(this)
+        select(this)
           .classed('fa-compress', !d.getCollapsed())
           .classed('fa-expand', d.getCollapsed());
-        (<MouseEvent>d3.event).stopPropagation();
+        (<MouseEvent>event).stopPropagation();
       });
     //remove
     $node.append('i').attr('class', 'fa fa-times').attr('title', 'Hide').on('click', (d) => {
@@ -392,7 +395,7 @@ export default class HeaderRenderer {
       } else {
         d.removeMe();
       }
-      (<MouseEvent>d3.event).stopPropagation();
+      (<MouseEvent>event).stopPropagation();
     });
   }
 
@@ -403,25 +406,25 @@ export default class HeaderRenderer {
       .style('transform', (d, i) => i < numColumns ? `translate(${left}px,0)` : null);
   }
 
-  private renderColumns(columns: Column[], shifts: IFlatColumn[], $base: d3.Selection<any> = this.$node, clazz: string = 'header') {
+  private renderColumns(columns: Column[], shifts: IFlatColumn[], $base: Selection<HTMLElement, any, Element, void> = this.$node, clazz: string = 'header') {
     const that = this;
-    const $headers = $base.selectAll('div.' + clazz).data(columns, (d) => d.id);
+    const $headers = $base.selectAll<HTMLElement, Column>('div.' + clazz).data(columns, (d) => d.id);
     const $headers_enter = $headers.enter().append('div').attr('class', clazz)
       .on('click', (d) => {
-        const mevent = <MouseEvent>d3.event;
+        const mevent = <MouseEvent>event;
         if (this.options.manipulative && !mevent.defaultPrevented && mevent.currentTarget === mevent.target) {
           d.toggleMySorting();
         }
       });
     const $header_enter_div = $headers_enter.append('div').classed('lu-label', true)
       .on('click', (d) => {
-        const mevent = <MouseEvent>d3.event;
+        const mevent = <MouseEvent>event;
         if (this.options.manipulative && !mevent.defaultPrevented) {
           d.toggleMySorting();
         }
       })
       .on('dragstart', (d) => {
-        var e = <DragEvent>(<any>d3.event);
+        var e = <DragEvent>(<any>event);
         e.dataTransfer.effectAllowed = 'copyMove'; //none, copy, copyLink, copyMove, link, linkMove, move, all
         e.dataTransfer.setData('text/plain', d.label);
         e.dataTransfer.setData('application/caleydo-lineup-column-ref', d.id);
@@ -433,9 +436,7 @@ export default class HeaderRenderer {
         }
       });
     $header_enter_div.append('i').attr('class', 'fa fa sort_indicator');
-    $header_enter_div.append('span').classed('lu-label', true).attr({
-      'draggable': this.options.manipulative
-    });
+    $header_enter_div.append('span').classed('lu-label', true).attr('draggable', this.options.manipulative);
 
     if (this.options.manipulative) {
       $headers_enter.append('div').classed('handle', true)
@@ -449,16 +450,12 @@ export default class HeaderRenderer {
       $headers_enter.append('div').classed('histogram', true);
     }
 
-    $headers.style({
-      width: (d, i) => (shifts[i].width + this.options.columnPadding) + 'px',
-      left: (d, i) => shifts[i].offset + 'px',
-      'background-color': (d) => d.color
-    });
-    $headers.attr({
-      'class': (d) => `${clazz} ${d.cssClass || ''} ${(d.getCompressed() ? 'compressed' : '')} ${d.headerCssClass} ${this.options.autoRotateLabels ? 'rotateable' : ''} ${d.isFiltered() ? 'filtered' : ''}`,
-      title: (d) => toFullTooltip(d),
-      'data-id': (d) => d.id
-    });
+    $headers.style('width', (d, i) => (shifts[i].width + this.options.columnPadding) + 'px')
+      .style('left', (d, i) => shifts[i].offset + 'px')
+      .style('background-color', (d) => d.color);
+    $headers.attr('class', (d) => `${clazz} ${d.cssClass || ''} ${(d.getCompressed() ? 'compressed' : '')} ${d.headerCssClass} ${this.options.autoRotateLabels ? 'rotateable' : ''} ${d.isFiltered() ? 'filtered' : ''}`)
+      .attr('title', (d) => toFullTooltip(d))
+      .attr('data-id', (d) => d.id);
     $headers.select('i.sort_indicator').attr('class', (d) => {
       const r = d.findMyRanker();
       if (r && r.getSortCriteria().col === d) {
@@ -470,13 +467,13 @@ export default class HeaderRenderer {
 
     $headers.filter((d) => isMultiLevelColumn(d)).each(function (col: IMultiLevelColumn) {
       if (col.getCollapsed() || col.getCompressed()) {
-        d3.select(this).selectAll('div.' + clazz + '_i').remove();
+        select(this).selectAll('div.' + clazz + '_i').remove();
       } else {
         let s_shifts = [];
         col.flatten(s_shifts, 0, 1, that.options.columnPadding);
 
         let s_columns = s_shifts.map((d) => d.col);
-        that.renderColumns(s_columns, s_shifts, d3.select(this), clazz + (clazz.substr(clazz.length - 2) !== '_i' ? '_i' : ''));
+        that.renderColumns(s_columns, s_shifts, select(this), clazz + (clazz.substr(clazz.length - 2) !== '_i' ? '_i' : ''));
       }
     }).select('div.lu-label').call(dropAble(['application/caleydo-lineup-column-number-ref', 'application/caleydo-lineup-column-number'], (data, d: IMultiLevelColumn, copy) => {
       var col: Column = null;
@@ -498,46 +495,40 @@ export default class HeaderRenderer {
     if (this.options.histograms) {
 
       $headers.filter((d) => isCategoricalColumn(d)).each(function (col: CategoricalColumn) {
-        const $this = d3.select(this).select('div.histogram');
+        const $this = select(this).select('div.histogram');
         const hist = that.histCache.get(col.id);
         if (hist) {
           hist.then((stats: ICategoricalStatistics) => {
             const $bars = $this.selectAll('div.bar').data(stats.hist);
             $bars.enter().append('div').classed('bar', true);
-            const sx = d3.scale.ordinal().domain(col.categories).rangeBands([0, 100], 0.1);
-            const sy = d3.scale.linear().domain([0, stats.maxBin]).range([0, 100]);
-            $bars.style({
-              left: (d) => sx(d.cat) + '%',
-              width: (d) => sx.rangeBand() + '%',
-              top: (d) => (100 - sy(d.y)) + '%',
-              height: (d) => sy(d.y) + '%',
-              'background-color': (d) => col.colorOf(d.cat)
-            }).attr({
-              title: (d) => `${d.cat}: ${d.y}`,
-              'data-cat': (d) => d.cat
-            });
+            const sx = scaleBand().domain(col.categories).range([0, 100]).paddingInner(0.1);
+            const sy = scaleLinear().domain([0, stats.maxBin]).range([0, 100]);
+            $bars.style('left', (d) => sx(d.cat) + '%')
+              .style('width', (d) => sx.bandwidth() + '%')
+              .style('top', (d) => (100 - sy(d.y)) + '%')
+              .style('height', (d) => sy(d.y) + '%')
+              .style('background-color', (d) => col.colorOf(d.cat))
+              .attr('title', (d) => `${d.cat}: ${d.y}`)
+              .attr('data-cat', (d) => d.cat);
             $bars.exit().remove();
           });
         }
       });
       $headers.filter((d) => d instanceof NumberColumn).each(function (col: Column) {
-        const $this = d3.select(this).select('div.histogram');
+        const $this = select(this).select('div.histogram');
         const hist = that.histCache.get(col.id);
         if (hist) {
           hist.then((stats: IStatistics) => {
             const $bars = $this.selectAll('div.bar').data(stats.hist);
             $bars.enter().append('div').classed('bar', true);
-            const sx = d3.scale.ordinal().domain(d3.range(stats.hist.length).map(String)).rangeBands([0, 100], 0.1);
-            const sy = d3.scale.linear().domain([0, stats.maxBin]).range([0, 100]);
-            $bars.style({
-              left: (d, i) => sx(String(i)) + '%',
-              width: (d, i) => sx.rangeBand() + '%',
-              top: (d) => (100 - sy(d.y)) + '%',
-              height: (d) => sy(d.y) + '%'
-            }).attr({
-              title: (d, i) => `Bin ${i}: ${d.y}`,
-              'data-x': (d) => d.x
-            });
+            const sx = scaleBand().domain(d3range(stats.hist.length).map(String)).range([0, 100]).paddingInner(0.1);
+            const sy = scaleLinear().domain([0, stats.maxBin]).range([0, 100]);
+            $bars.style('left', (d, i) => sx(String(i)) + '%')
+              .style('width', (d, i) => sx.bandwidth() + '%')
+              .style('top', (d) => (100 - sy(d.length)) + '%')
+              .style('height', (d) => sy(d.length) + '%')
+              .attr('title', (d, i) => `Bin ${i}: ${d.length}`)
+              .attr('data-x', (d) => d.x0);
             $bars.exit().remove();
 
             var $mean = $this.select('div.mean');

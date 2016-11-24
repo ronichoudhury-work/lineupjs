@@ -2,7 +2,8 @@
  * Created by sam on 04.11.2016.
  */
 
-import {max as d3max, scale, min as d3min} from 'd3';
+import {max as d3max, min as d3min} from 'd3-array';
+import {scaleOrdinal, schemeCategory10} from 'd3-scale';
 import Column from './Column';
 import ValueColumn from './ValueColumn';
 import CategoricalColumn, {ICategoricalColumn} from './CategoricalColumn';
@@ -14,7 +15,7 @@ import NumberColumn, {INumberColumn} from './NumberColumn';
 export default class CategoricalNumberColumn extends ValueColumn<number> implements INumberColumn, ICategoricalColumn {
   static EVENT_MAPPING_CHANGED = NumberColumn.EVENT_MAPPING_CHANGED;
 
-  private colors = scale.category10();
+  private colors = scaleOrdinal<string,string>(schemeCategory10);
 
   /**
    * category labels by default the category name itself
@@ -22,7 +23,7 @@ export default class CategoricalNumberColumn extends ValueColumn<number> impleme
    */
   private catLabels = new Map<string, string>();
 
-  private scale = scale.ordinal().rangeRoundPoints([0, 1]);
+  private scale = scaleOrdinal<string, number>();
 
   private currentFilter: string[] = null;
   /**

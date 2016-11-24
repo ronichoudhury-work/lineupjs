@@ -2,7 +2,8 @@
  * Created by sam on 04.11.2016.
  */
 
-import {ascending, scale} from 'd3';
+import {ascending} from 'd3-array';
+import * as scale from 'd3-scale';
 import Column, {IColumnDesc} from './Column';
 import ValueColumn from './ValueColumn';
 import StringColumn from './StringColumn';
@@ -44,7 +45,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
    * colors for each category
    * @type {Ordinal<string, string>}
    */
-  private colors = scale.category10();
+  private colors = scale.scaleOrdinal(scale.schemeCategory10);
 
   /**
    * category labels by default the category name itself

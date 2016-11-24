@@ -2,7 +2,7 @@
  * Created by Samuel Gratzl on 14.08.2015.
  */
 
-import {max as d3max, event as d3event, mouse as d3mouse} from 'd3';
+import {event as d3event, mouse as d3mouse} from 'd3-selection';
 import {merge, createTextHints} from '../utils';
 import Column from '../model/Column';
 import SelectionColumn from '../model/SelectionColumn';
@@ -271,15 +271,14 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
     const firstLine = Math.max(context.cellY(0) - 20, 0); //where to start
     const lastLine = Math.min(context.cellY(Math.max(...data.map((d) => d.order.length))) + 20, height);
 
-    this.$node.style({
-      width: Math.max(0, width) + 'px',
-      height: height + 'px'
-    });
+    this.$node
+      .style('width', Math.max(0, width) + 'px')
+      .style('height', height + 'px');
 
-    $canvas.attr({
-      width: Math.max(0, width),
-      height: lastLine - firstLine
-    }).style('margin-top', firstLine + 'px');
+    $canvas
+      .attr('width', Math.max(0, width))
+      .attr('height', lastLine - firstLine)
+      .style('margin-top', firstLine + 'px');
 
     this.lastShifts = this.computeShifts(data);
 

@@ -2,7 +2,8 @@
  * Created by Samuel Gratzl on 14.08.2015.
  */
 
-import {dispatch, select, event as d3event, Dispatch} from 'd3';
+import {select, event as d3event} from 'd3-selection';
+import {dispatch, Dispatch} from 'd3-dispatch';
 
 /**
  * create a delayed call, can be called multiple times but only the last one at most delayed by timeToDelay will be executed
@@ -27,7 +28,7 @@ export function delayedCall(callback: (...args: any[]) => void, timeToDelay = 10
  * base class for event dispatching using d3 event mechanism
  */
 export class AEventDispatcher {
-  private listeners: Dispatch;
+  private listeners: Dispatch<any>;
   private forwarder;
 
   constructor() {

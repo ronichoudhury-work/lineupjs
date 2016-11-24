@@ -2,7 +2,8 @@
  * Created by sam on 04.11.2016.
  */
 
-import {scale, format} from 'd3';
+import {scaleLinear, scaleSqrt, scalePow, scaleLog} from 'd3-scale';
+import {format} from 'd3-format';
 import Column, {IColumnDesc, IStatistics} from './Column';
 import ValueColumn from './ValueColumn';
 
@@ -79,17 +80,17 @@ export interface INumberFilter {
 function toScale(type = 'linear'): IScale {
   switch (type) {
     case 'log':
-      return scale.log().clamp(true);
+      return scaleLog().clamp(true);
     case 'sqrt':
-      return scale.sqrt().clamp(true);
+      return scaleSqrt().clamp(true);
     case 'pow1.1':
-      return scale.pow().exponent(1.1).clamp(true);
+      return scalePow().exponent(1.1).clamp(true);
     case 'pow2':
-      return scale.pow().exponent(2).clamp(true);
+      return scalePow().exponent(2).clamp(true);
     case 'pow3':
-      return scale.pow().exponent(3).clamp(true);
+      return scalePow().exponent(3).clamp(true);
     default:
-      return scale.linear().clamp(true);
+      return scaleLinear().clamp(true);
   }
 }
 
