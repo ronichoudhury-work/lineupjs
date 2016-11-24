@@ -60,13 +60,13 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
     const domMapping = this.domMapping;
     const g = this.domMapping.g;
 
-    const $rankings_bind = $body.selectAll<SVGElement|HTMLElement, IRankingData>(g + '.ranking').data(data, (d) => d.id);
-    const $rankings_enter = $rankings_bind.enter().append(g)
+    const $rankings_update = $body.selectAll<DOMElement, IRankingData>(g + '.ranking').data(data, (d) => d.id);
+    const $rankings_enter = $rankings_update.enter().append<DOMElement>(g)
       .attr('class', 'ranking')
       .call(domMapping.transform, (d) => [d.shift, 0]);
     $rankings_enter.append(g).attr('class', 'rows');
     $rankings_enter.append(g).attr('class', 'meanlines').attr('clip-path', `url(#c${this.options.idPrefix}Freeze)`);
-    const $rankings = $rankings_bind.merge($rankings_enter);
+    const $rankings = $rankings_update.merge($rankings_enter);
     //animated shift
     this.animated($rankings).call(domMapping.transform, (d, i) => [d.shift, 0]);
 
@@ -162,7 +162,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
       renderRanking(select<DOMElement, IRankingData>(this), d);
     });
 
-    $rankings_bind.exit().remove();
+    $rankings_update.exit().remove();
 
     return Promise.all(toWait);
   }
@@ -216,7 +216,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
         rpos: cache[data_index]
       })).filter((d) => d.rpos != null);
     });
-    const $lines_enter = $lines.enter().append('line').attr('class', 'slope').attr('x2', this.options.slopeWidth)
+    const $lines_enter = $lines_update.enter().append('line').attr('class', 'slope').attr('x2', this.options.slopeWidth)
       .on('mouseenter', (d) => this.mouseOver(d.data_index, true))
       .on('mouseleave', (d) => this.mouseOver(d.data_index, false));
     $lines_update.merge($lines_enter)

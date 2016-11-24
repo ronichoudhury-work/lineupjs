@@ -62,7 +62,7 @@ export default class SVGBodyRenderer extends ADOMBodyRenderer {
     const textClipPath = $base.selectAll<SVGClipPathElement, Column>(function () {
       return <any>this.getElementsByTagName('clipPath');
     }).data(r, (d) => d.id);
-    const textClipPath_enter = textClipPath.enter().append('clipPath');
+    const textClipPath_enter = textClipPath.enter().append<SVGClipPathElement>('clipPath');
     textClipPath_enter
       .attr('id', (d) => `cp${context.idPrefix}clipCol${d.id}`)
       .append('rect').attr('y', 0);

@@ -410,7 +410,7 @@ export default class HeaderRenderer {
   private renderColumns(columns: Column[], shifts: IFlatColumn[], $base: Selection<HTMLElement, any, Element, void> = this.$node, clazz: string = 'header') {
     const that = this;
     const $headers_update = $base.selectAll<HTMLElement, Column>('div.' + clazz).data(columns, (d) => d.id);
-    const $headers_enter = $headers.enter().append('div').attr('class', clazz)
+    const $headers_enter = $headers_update.enter().append<HTMLElement>('div').attr('class', clazz)
       .on('click', (d) => {
         const mevent = <MouseEvent>event;
         if (this.options.manipulative && !mevent.defaultPrevented && mevent.currentTarget === mevent.target) {
