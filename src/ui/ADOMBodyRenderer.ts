@@ -3,7 +3,7 @@
  */
 
 import {select, Selection, event as d3event} from 'd3-selection';
-import {transition} from 'd3-transition';
+import 'd3-transition';
 import {max as d3max} from 'd3-array';
 import {forEach} from '../utils';
 import Column, {IStatistics} from '../model/Column';

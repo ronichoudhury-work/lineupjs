@@ -16,7 +16,7 @@ import CategoricalNumberColumn from './model/CategoricalNumberColumn';
 import {offset} from './utils';
 import MappingEditor from './mappingeditor';
 import {Selection, select, event as d3event} from 'd3-selection';
-import {transition} from 'd3-transition';
+import 'd3-transition';
 import {scaleLinear} from 'd3-scale';
 import {drag as d3drag} from 'd3-drag';
 import DataProvider from './provider/ADataProvider';
