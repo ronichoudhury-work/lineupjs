@@ -70,7 +70,7 @@ export class AEventDispatcher {
         type: t, //the event type
         args: args //the arguments to the listener
       };
-      this.listeners[<string>t].apply(context, args);
+      this.listeners.apply(<string>t, context, args);
     };
     if (Array.isArray(type)) {
       (<string[]>type).forEach(fireImpl.bind(this));

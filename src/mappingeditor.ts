@@ -201,13 +201,13 @@ export default class MappingEditor {
 
     function createDrag(move) {
       return d3drag<SVGElement, any>()
-        .on('dragstart', function () {
+        .on('start', function () {
           select(this)
             .classed('dragging', true)
             .attr('r', options.radius * 1.1);
         })
         .on('drag', move)
-        .on('dragend', function () {
+        .on('end', function () {
           select(this)
             .classed('dragging', false)
             .attr('r', options.radius);

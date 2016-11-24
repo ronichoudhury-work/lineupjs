@@ -2,10 +2,10 @@
  * Created by Samuel Gratzl on 14.08.2015.
  */
 
-import {Selection, select, mouse as d3mouse} from 'd3-selection';
+import {Selection, select, mouse as d3mouse, event as d3event} from 'd3-selection';
 import {scaleLinear, scaleBand} from 'd3-scale';
 import {range as d3range} from 'd3-array';
-import {drag as d3drag} from 'd3-drag';
+import {drag as d3drag, D3DragEvent} from 'd3-drag';
 import {merge, dropAble, delayedCall, forEach} from '../utils';
 import Column, {IStatistics, ICategoricalStatistics, IFlatColumn} from '../model/Column';
 import StringColumn from '../model/StringColumn';
@@ -71,6 +71,11 @@ export interface IHeaderRendererOptions {
   rankingButtons?: IRankingHook;
 }
 
+function stopDragEvent() {
+  const event = (<D3DragEvent<HTMLElement, Column, HTMLElement>>d3event).sourceEvent;
+  event.stopPropagation();
+  event.preventDefault();
+}
 
 export default class HeaderRenderer {
   private options: IHeaderRendererOptions = {
@@ -102,23 +107,19 @@ export default class HeaderRenderer {
 
   private dragHandler = d3drag<HTMLElement, Column>()
   //.origin((d) => d)
-    .on('dragstart', function () {
+    .on('start', function () {
       select(this).classed('dragging', true);
-      (<any>event).sourceEvent.stopPropagation();
-      (<any>event).sourceEvent.preventDefault();
+      stopDragEvent();
     })
     .on('drag', function (d) {
       //the new width
       var newValue = Math.max(d3mouse(<HTMLElement>this.parentNode)[0], 2);
       d.setWidth(newValue);
-      (<any>event).sourceEvent.stopPropagation();
-      (<any>event).sourceEvent.preventDefault();
+      stopDragEvent();
     })
-    .on('dragend', function (d) {
+    .on('end', function (d) {
       select(this).classed('dragging', false);
-      (<any>event).sourceEvent.stopPropagation();
-
-      (<any>event).sourceEvent.preventDefault();
+      stopDragEvent();
     });
 
   private dropHandler = dropAble(['application/caleydo-lineup-column-ref', 'application/caleydo-lineup-column'], (data, d: Column, copy) => {
@@ -328,37 +329,37 @@ export default class HeaderRenderer {
     //edit weights
     $stacked.append<HTMLElement>('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (d) {
       openEditWeightsDialog(<StackColumn>d, select<HTMLElement, Column>(this.parentElement.parentElement));
-      (<MouseEvent>event).stopPropagation();
+      (<MouseEvent>d3event).stopPropagation();
     });
     //rename
     $regular.append<HTMLElement>('i').attr('class', 'fa fa-pencil-square-o').attr('title', 'Rename').on('click', function (d) {
       openRenameDialog(d, select<HTMLElement, Column>(this.parentElement.parentElement));
-      (<MouseEvent>event).stopPropagation();
+      (<MouseEvent>d3event).stopPropagation();
     });
     //clone
     $regular.append<HTMLElement>('i').attr('class', 'fa fa-code-fork').attr('title', 'Generate Snapshot').on('click', function (d) {
       provider.takeSnapshot(d);
-      (<MouseEvent>event).stopPropagation();
+      (<MouseEvent>d3event).stopPropagation();
     });
     //edit link
     $node.filter((d) => d instanceof LinkColumn).append<HTMLElement>('i').attr('class', 'fa fa-external-link').attr('title', 'Edit Link Pattern').on('click', function (d) {
       openEditLinkDialog(<LinkColumn>d, select<HTMLElement, Column>(this.parentElement.parentElement), [].concat((<any>d.desc).templates || [], that.options.linkTemplates), that.options.idPrefix);
-      (<MouseEvent>event).stopPropagation();
+      (<MouseEvent>d3event).stopPropagation();
     });
     //edit script
     $node.filter((d) => d instanceof ScriptColumn).append<HTMLElement>('i').attr('class', 'fa fa-gears').attr('title', 'Edit Combine Script').on('click', function (d) {
       openEditScriptDialog(<ScriptColumn>d, select<HTMLElement, Column>(this.parentElement.parentElement));
-      (<MouseEvent>event).stopPropagation();
+      (<MouseEvent>d3event).stopPropagation();
     });
     //filter
     $node.filter((d) => filterDialogs.hasOwnProperty(d.desc.type)).append<HTMLElement>('i').attr('class', 'fa fa-filter').attr('title', 'Filter').on('click', function (d) {
       filterDialogs[d.desc.type](d, select<HTMLElement, Column>(this.parentElement.parentElement), provider, that.options.idPrefix);
-      (<MouseEvent>event).stopPropagation();
+      (<MouseEvent>d3event).stopPropagation();
     });
     //search
     $node.filter((d) => this.options.searchAble(d)).append<HTMLElement>('i').attr('class', 'fa fa-search').attr('title', 'Search').on('click', function (d) {
       openSearchDialog(d, select<HTMLElement, Column>(this.parentElement.parentElement), provider);
-      (<MouseEvent>event).stopPropagation();
+      (<MouseEvent>d3event).stopPropagation();
     });
     //collapse
     $regular.append('i')
@@ -371,7 +372,7 @@ export default class HeaderRenderer {
         select(this)
           .classed('fa-toggle-left', !d.getCompressed())
           .classed('fa-toggle-right', d.getCompressed());
-        (<MouseEvent>event).stopPropagation();
+        (<MouseEvent>d3event).stopPropagation();
       });
     //compress
     $multilevel.append('i')
@@ -384,7 +385,7 @@ export default class HeaderRenderer {
         select(this)
           .classed('fa-compress', !d.getCollapsed())
           .classed('fa-expand', d.getCollapsed());
-        (<MouseEvent>event).stopPropagation();
+        (<MouseEvent>d3event).stopPropagation();
       });
     //remove
     $node.append('i').attr('class', 'fa fa-times').attr('title', 'Hide').on('click', (d) => {
@@ -396,7 +397,7 @@ export default class HeaderRenderer {
       } else {
         d.removeMe();
       }
-      (<MouseEvent>event).stopPropagation();
+      (<MouseEvent>d3event).stopPropagation();
     });
   }
 
@@ -412,20 +413,20 @@ export default class HeaderRenderer {
     const $headers_update = $base.selectAll<HTMLElement, Column>('div.' + clazz).data(columns, (d) => d.id);
     const $headers_enter = $headers_update.enter().append<HTMLElement>('div').attr('class', clazz)
       .on('click', (d) => {
-        const mevent = <MouseEvent>event;
+        const mevent = <MouseEvent>d3event;
         if (this.options.manipulative && !mevent.defaultPrevented && mevent.currentTarget === mevent.target) {
           d.toggleMySorting();
         }
       });
     const $header_enter_div = $headers_enter.append('div').classed('lu-label', true)
       .on('click', (d) => {
-        const mevent = <MouseEvent>event;
+        const mevent = <MouseEvent>d3event;
         if (this.options.manipulative && !mevent.defaultPrevented) {
           d.toggleMySorting();
         }
       })
       .on('dragstart', (d) => {
-        var e = <DragEvent>(<any>event);
+        var e = <DragEvent>(<any>d3event);
         e.dataTransfer.effectAllowed = 'copyMove'; //none, copy, copyLink, copyMove, link, linkMove, move, all
         e.dataTransfer.setData('text/plain', d.label);
         e.dataTransfer.setData('application/caleydo-lineup-column-ref', d.id);
