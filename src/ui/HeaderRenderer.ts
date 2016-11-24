@@ -249,12 +249,13 @@ export default class HeaderRenderer {
   }
 
   private renderRankingButtons(rankings: Ranking[], rankingsOffsets: number[]) {
-    const $rankingbuttons = this.$node.selectAll('div.rankingbuttons').data(rankings);
-    $rankingbuttons.enter().append('div')
+    const $rankingbuttons_update = this.$node.selectAll('div.rankingbuttons').data(rankings);
+    $rankingbuttons_update.enter().append('div')
       .classed('rankingbuttons', true)
-      .call(this.options.rankingButtons);
-    $rankingbuttons.style('left', (d, i) => rankingsOffsets[i] + 'px');
-    $rankingbuttons.exit().remove();
+      .call(this.options.rankingButtons)
+      .merge($rankingbuttons_update)
+      .style('left', (d, i) => rankingsOffsets[i] + 'px');
+    $rankingbuttons_update.exit().remove();
   }
 
   update() {
@@ -408,7 +409,7 @@ export default class HeaderRenderer {
 
   private renderColumns(columns: Column[], shifts: IFlatColumn[], $base: Selection<HTMLElement, any, Element, void> = this.$node, clazz: string = 'header') {
     const that = this;
-    const $headers = $base.selectAll<HTMLElement, Column>('div.' + clazz).data(columns, (d) => d.id);
+    const $headers_update = $base.selectAll<HTMLElement, Column>('div.' + clazz).data(columns, (d) => d.id);
     const $headers_enter = $headers.enter().append('div').attr('class', clazz)
       .on('click', (d) => {
         const mevent = <MouseEvent>event;
@@ -449,6 +450,7 @@ export default class HeaderRenderer {
     if (this.options.histograms) {
       $headers_enter.append('div').classed('histogram', true);
     }
+    const $headers = $headers_update.merge($headers_enter);
 
     $headers.style('width', (d, i) => (shifts[i].width + this.options.columnPadding) + 'px')
       .style('left', (d, i) => shifts[i].offset + 'px')
@@ -499,8 +501,8 @@ export default class HeaderRenderer {
         const hist = that.histCache.get(col.id);
         if (hist) {
           hist.then((stats: ICategoricalStatistics) => {
-            const $bars = $this.selectAll('div.bar').data(stats.hist);
-            $bars.enter().append('div').classed('bar', true);
+            const $bars_update = $this.selectAll('div.bar').data(stats.hist);
+            const $bars = $bars_update.merge($bars_update.enter().append('div').classed('bar', true));
             const sx = scaleBand().domain(col.categories).range([0, 100]).paddingInner(0.1);
             const sy = scaleLinear().domain([0, stats.maxBin]).range([0, 100]);
             $bars.style('left', (d) => sx(d.cat) + '%')
@@ -510,7 +512,7 @@ export default class HeaderRenderer {
               .style('background-color', (d) => col.colorOf(d.cat))
               .attr('title', (d) => `${d.cat}: ${d.y}`)
               .attr('data-cat', (d) => d.cat);
-            $bars.exit().remove();
+            $bars_update.exit().remove();
           });
         }
       });
@@ -519,8 +521,8 @@ export default class HeaderRenderer {
         const hist = that.histCache.get(col.id);
         if (hist) {
           hist.then((stats: IStatistics) => {
-            const $bars = $this.selectAll('div.bar').data(stats.hist);
-            $bars.enter().append('div').classed('bar', true);
+            const $bars_update = $this.selectAll('div.bar').data(stats.hist);
+            const $bars = $bars_update.merge($bars_update.enter().append('div').classed('bar', true));
             const sx = scaleBand().domain(d3range(stats.hist.length).map(String)).range([0, 100]).paddingInner(0.1);
             const sy = scaleLinear().domain([0, stats.maxBin]).range([0, 100]);
             $bars.style('left', (d, i) => sx(String(i)) + '%')
@@ -529,7 +531,7 @@ export default class HeaderRenderer {
               .style('height', (d) => sy(d.length) + '%')
               .attr('title', (d, i) => `Bin ${i}: ${d.length}`)
               .attr('data-x', (d) => d.x0);
-            $bars.exit().remove();
+            $bars_update.exit().remove();
 
             var $mean = $this.select('div.mean');
             if ($mean.empty()) {
@@ -541,6 +543,6 @@ export default class HeaderRenderer {
       });
     }
 
-    $headers.exit().remove();
+    $headers_update.exit().remove();
   }
 }

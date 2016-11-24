@@ -175,8 +175,9 @@ export function openEditWeightsDialog(column: StackColumn, $header: ColumnSelect
   var $popup = makePopup($header, 'Edit Weights', '<table></table>');
 
   //show as a table with inputs and bars
-  var $rows = $popup.select('table').selectAll('tr').data(children);
-  var $rows_enter = $rows.enter().append('tr');
+  const $rows_update = $popup.select('table').selectAll('tr').data(children);
+  const $rows_enter = $rows_update.enter().append('tr');
+  const $rows = $rows_update.merge($rows_enter);
   $rows_enter.append('td')
     .append<HTMLInputElement>('input')
       .attr('type', 'number')
@@ -256,6 +257,7 @@ function openCategoricalFilter(column: CategoricalColumn, $header: ColumnSelecti
 
   const $rows = popup.select('tbody').selectAll('tr').data(trData);
   const $rows_enter = $rows.enter().append('tr');
+  const $rows_update = $rows.merge($rows_enter);
   $rows_enter.append('td').attr('class', 'checkmark');
   $rows_enter.append('td').attr('class', 'datalabel').text((d) => d.label);
   $rows_enter.on('click', (d) => {
@@ -264,8 +266,8 @@ function openCategoricalFilter(column: CategoricalColumn, $header: ColumnSelecti
   });
 
   function redraw() {
-    $rows.select('.checkmark').html((d) => '<i class="fa fa-' + ((d.isChecked) ? 'check-' : '') + 'square-o"></i>');
-    $rows.select('.datalabel').style('opacity', (d) => d.isChecked ? '1.0' : '.8');
+    $rows_update.select('.checkmark').html((d) => '<i class="fa fa-' + ((d.isChecked) ? 'check-' : '') + 'square-o"></i>');
+    $rows_update.select('.datalabel').style('opacity', (d) => d.isChecked ? '1.0' : '.8');
   }
 
   redraw();
@@ -539,8 +541,9 @@ function openCategoricalMappingEditor(column: CategoricalNumberColumn, $header: 
     };
   }).sort(sortbyName('label'));
 
-  var $rows = $popup.select('tbody').selectAll('tr').data(trData);
-  var $rows_enter = $rows.enter().append('tr');
+  const $rows = $popup.select('tbody').selectAll('tr').data(trData);
+  const $rows_enter = $rows.enter().append('tr');
+  const $rows_update = $rows.merge($rows_enter);
   $rows_enter.append('td').attr('class', 'checkmark').on('click', (d) => {
     d.isChecked = !d.isChecked;
     redraw();
@@ -558,9 +561,9 @@ function openCategoricalMappingEditor(column: CategoricalNumberColumn, $header: 
   $rows_enter.append('td').attr('class', 'datalabel').text((d) => d.label);
 
   function redraw() {
-    $rows.select('.checkmark').html((d) => '<i class="fa fa-' + ((d.isChecked) ? 'check-' : '') + 'square-o"></i>');
-    $rows.select('.bar').transition().style('width', (d) => scale(d.range) + 'px');
-    $rows.select('.datalabel').style('opacity', (d) => d.isChecked ? '1.0' : '.8');
+    $rows_update.select('.checkmark').html((d) => '<i class="fa fa-' + ((d.isChecked) ? 'check-' : '') + 'square-o"></i>');
+    $rows_update.select('.bar').transition().style('width', (d) => scale(d.range) + 'px');
+    $rows_update.select('.datalabel').style('opacity', (d) => d.isChecked ? '1.0' : '.8');
   }
 
   redraw();

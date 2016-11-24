@@ -170,12 +170,13 @@ export default class MappingEditor {
 
     //lines that show mapping of individual data items
     var datalines = $root.select('g.samples').selectAll('line').data([]);
+    var datalines_update = datalines;
     this.dataPromise.then((data) => {
       //to unique values
       data = unique(data);
 
       datalines = datalines.data(data);
-      datalines.enter()
+      let datalines_enter = datalines.enter()
         .append('line')
         .attr('x1',(d) => normal2pixel(that.scale.apply(d)))
         .attr('y1',0)
@@ -185,10 +186,11 @@ export default class MappingEditor {
           const domain = that.scale.domain;
           return (d < domain[0] || d > domain[domain.length - 1]) ? 'hidden' : null;
         });
+        datalines_update = datalines.merge(datalines_enter);
     });
 
     function updateDataLines() {
-      datalines
+      datalines_update
         .attr('x1', (d) => normal2pixel(that.scale.apply(d)))
         .attr('x2', raw2pixel)
         .style('visibility', function (d) {
@@ -301,11 +303,13 @@ export default class MappingEditor {
         updateScale();
       }));
 
-      $mapping.select('line')
+      const $mapping_update = $mapping.merge($mapping_enter);
+
+      $mapping_update.select('line')
         .attr('x1', (d) => normal2pixel(d.n))
         .attr('x2', (d) => raw2pixel(d.r));
-      $mapping.select('circle.normalized').attr('cx', (d) => normal2pixel(d.n));
-      $mapping.select('circle.raw').attr('cx', (d) => raw2pixel(d.r));
+      $mapping_update.select('circle.normalized').attr('cx', (d) => normal2pixel(d.n));
+      $mapping_update.select('circle.raw').attr('cx', (d) => raw2pixel(d.r));
       $mapping.exit().remove();
     }
 
