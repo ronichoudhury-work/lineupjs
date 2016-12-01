@@ -1261,7 +1261,7 @@ export class CategoricalColumn extends ValueColumn<string> implements ICategoric
   initCategories(desc:any) {
     if (desc.categories) {
       var cats = [],
-        cols = this.colors.range(),
+        cols = this.colors.range().slice(),
         labels = d3.map<string>();
       desc.categories.forEach((cat, i) => {
         if (typeof cat === 'string') {
