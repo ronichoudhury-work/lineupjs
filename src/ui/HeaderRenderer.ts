@@ -120,7 +120,7 @@ export default class HeaderRenderer {
     })
     .on('drag', function (d) {
       //the new width
-      cpnst newValue = Math.max(d3mouse(<HTMLElement>this.parentNode)[0], 2);
+      const newValue = Math.max(d3mouse(<HTMLElement>this.parentNode)[0], 2);
       d.setWidth(newValue);
       stopDragEvent();
     })
@@ -323,11 +323,6 @@ export default class HeaderRenderer {
       that = this;
     const $regular = $node.filter(d => !(d instanceof RankColumn));
 
-    //edit weights
-    $stacked.append<HTMLElement>('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (d) {
-      openEditWeightsDialog(<StackColumn>d, select<HTMLElement, Column>(this.parentElement.parentElement));
-      (<MouseEvent>d3event).stopPropagation();
-    });
     //rename
     $regular.append<HTMLElement>('i').attr('class', 'fa fa-pencil-square-o').attr('title', 'Rename').on('click', function (d) {
       openRenameDialog(d, select<HTMLElement, Column>(this.parentElement.parentElement));
@@ -359,9 +354,9 @@ export default class HeaderRenderer {
       (<MouseEvent>d3event).stopPropagation();
     });
     //edit weights
-    $node.filter((d) => d instanceof StackColumn).append('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (d) {
-      openEditWeightsDialog(<StackColumn>d, d3.select(this.parentNode.parentNode));
-      (<MouseEvent>d3.event).stopPropagation();
+    $node.filter((d) => d instanceof StackColumn).append<HTMLElement>('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (d) {
+      openEditWeightsDialog(<StackColumn>d,  select<HTMLElement, Column>(this.parentElement.parentElement));
+      (<MouseEvent>d3event).stopPropagation();
     });
     //collapse
     $regular.append('i')
