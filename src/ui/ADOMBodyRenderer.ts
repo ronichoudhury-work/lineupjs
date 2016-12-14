@@ -141,12 +141,12 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
     }
 
     {
-      let $meanlines_update = $rankings.select(g + '.meanlines').selectAll(domMapping.meanLine + '.meanline').data((d) => d.columns.filter((c) => this.showMeanLine(c.column)));
-      let $meanlines_enter = $meanlines_update.enter().append(domMapping.meanLine).attr('class', 'meanline');
+      let $meanlines_update = $rankings.select(g + '.meanlines').selectAll<DOMElement, null>(domMapping.meanLine + '.meanline').data((d) => d.columns.filter((c) => this.showMeanLine(c.column)));
+      let $meanlines_enter = $meanlines_update.enter().append<DOMElement>(domMapping.meanLine).attr('class', 'meanline');
       let $meanlines = $meanlines_update.merge($meanlines_enter);
       $meanlines.each(function (d: IRankingColumnData, i: number, j) {
         const h = that.histCache.get(d.column.id);
-        const $mean = select<HTMLElement | SVGGElement, IRankingColumnData>(this);
+        const $mean = select<DOMElement, IRankingColumnData>(this);
         if (!h) {
           return;
         }

@@ -302,7 +302,7 @@ export default class HeaderRenderer {
       let rotatedAny = false;
       this.$node.selectAll<HTMLElement, Column>('div.header')
         .style('height', height + 'px').select<HTMLElement>('div.lu-label').each(function (d: Column) {
-        const w = this.querySelector('span.lu-label').offsetWidth;
+        const w = (<HTMLSpanElement>this.querySelector('span.lu-label')).offsetWidth;
         const actWidth = d.getWidth();
         if (w > (actWidth + 30)) { //rotate
           select(this).style('transform', `rotate(${that.options.rotationDegree}deg)`);
