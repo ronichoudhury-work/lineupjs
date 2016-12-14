@@ -63,9 +63,9 @@ export default class PoolRenderer {
       this.update();
     });
     if (this.options.hideUsed) {
-      var that = this;
+      const that = this;
       data.on([DataProvider.EVENT_ADD_COLUMN + '.pool', DataProvider.EVENT_REMOVE_COLUMN + '.pool'], function (col) {
-        var desc = col.desc, change = this.type === 'addColumn' ? 1 : -1;
+        const desc = col.desc, change = this.type === 'addColumn' ? 1 : -1;
         that.entries.some((entry) => {
           if (entry.desc !== desc) {
             return false;
@@ -76,7 +76,7 @@ export default class PoolRenderer {
         that.update();
       });
       data.on([DataProvider.EVENT_ADD_RANKING + '.pool', DataProvider.EVENT_REMOVE_RANKING + '.pool'], function (ranking) {
-        var descs = ranking.flatColumns.map((d) => d.desc), change = this.type === 'addRanking' ? 1 : -1;
+        const descs = ranking.flatColumns.map((d) => d.desc), change = this.type === 'addRanking' ? 1 : -1;
         that.entries.some((entry) => {
           if (descs.indexOf(entry.desc) < 0) {
             return false;
@@ -87,7 +87,7 @@ export default class PoolRenderer {
         that.update();
       });
       data.getRankings().forEach((ranking) => {
-        var descs = ranking.flatColumns.map((d) => d.desc), change = +1;
+        const descs = ranking.flatColumns.map((d) => d.desc), change = +1;
         that.entries.some((entry) => {
           if (descs.indexOf(entry.desc) < 0) {
             return false;
@@ -110,7 +110,7 @@ export default class PoolRenderer {
     const descToShow = this.entries.filter((e) => e.used === 0).map((d) => d.desc);
     const $headers_update = this.$node.selectAll('div.header').data(descToShow);
     const $headers_enter = $headers_update.enter().append('div').attr('class', 'header').attr('draggable', true).on('dragstart', (d) => {
-      var e = <DragEvent>(<any>d3event);
+      const e = <DragEvent>(<any>d3event);
       e.dataTransfer.effectAllowed = 'copyMove'; //none, copy, copyLink, copyMove, link, linkMove, move, all
       e.dataTransfer.setData('text/plain', d.label);
       e.dataTransfer.setData('application/caleydo-lineup-column', JSON.stringify(data.toDescRef(d)));
@@ -129,7 +129,7 @@ export default class PoolRenderer {
 
     $headers.attr('class', (d) => `header ${((<any>d).cssClass || '')} ${d.type}`);
     $headers.style('transform', (d, i) => {
-        var pos = this.layout(i);
+        const pos = this.layout(i);
         return 'translate(' + pos.x + 'px,' + pos.y + 'px)';
       }).style('background-color', (d) => {
         const s = (<any>d);
@@ -166,7 +166,7 @@ export default class PoolRenderer {
       case 'horizontal':
         return {x: i * this.options.elemWidth, y: 0};
       case 'grid':
-        var perRow = Math.floor(this.options.width / this.options.elemWidth);
+        const perRow = Math.floor(this.options.width / this.options.elemWidth);
         return {x: (i % perRow) * this.options.elemWidth, y: Math.floor(i / perRow) * this.options.elemHeight};
       //case 'vertical':
       default:

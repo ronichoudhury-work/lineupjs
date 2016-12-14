@@ -11,10 +11,10 @@ import Column, {IStatistics, ICategoricalStatistics, IFlatColumn} from '../model
 import StringColumn from '../model/StringColumn';
 import Ranking from '../model/Ranking';
 import {IMultiLevelColumn, isMultiLevelColumn} from '../model/CompositeColumn';
-import NumberColumn, {isNumberColumn} from '../model/NumberColumn';
+import NumberColumn, {isNumberColumn, INumberColumn} from '../model/NumberColumn';
 import CategoricalColumn, {isCategoricalColumn} from '../model/CategoricalColumn';
 import RankColumn from '../model/RankColumn';
-import StackColumn from '../model/StackColumn';
+import StackColumn, {createDesc as createStackDesc} from '../model/StackColumn';
 import LinkColumn from '../model/LinkColumn';
 import ScriptColumn from '../model/ScriptColumn';
 import DataProvider from '../provider/ADataProvider';
@@ -33,7 +33,7 @@ import {
  * @param col the column
  */
 export function toFullTooltip(col: { label: string, description?: string}) {
-  var base = col.label;
+  let base = col.label;
   if (col.description != null && col.description !== '') {
     base += '\n' + col.description;
   }
@@ -71,11 +71,18 @@ export interface IHeaderRendererOptions {
   rankingButtons?: IRankingHook;
 }
 
-function stopDragEvent() {
+function countMultiLevel(c: Column): number {
+  if (isMultiLevelColumn(c) && !(<IMultiLevelColumn>c).getCollapsed() && !c.getCompressed()) {
+    return 1 + Math.max.apply(Math, (<IMultiLevelColumn>c).children.map(countMultiLevel));
+  }
+  return 1;
+}function stopDragEvent() {
   const event = (<D3DragEvent<HTMLElement, Column, HTMLElement>>d3event).sourceEvent;
   event.stopPropagation();
   event.preventDefault();
 }
+
+
 
 export default class HeaderRenderer {
   private options: IHeaderRendererOptions = {
@@ -113,7 +120,7 @@ export default class HeaderRenderer {
     })
     .on('drag', function (d) {
       //the new width
-      var newValue = Math.max(d3mouse(<HTMLElement>this.parentNode)[0], 2);
+      cpnst newValue = Math.max(d3mouse(<HTMLElement>this.parentNode)[0], 2);
       d.setWidth(newValue);
       stopDragEvent();
     })
@@ -123,9 +130,9 @@ export default class HeaderRenderer {
     });
 
   private dropHandler = dropAble(['application/caleydo-lineup-column-ref', 'application/caleydo-lineup-column'], (data, d: Column, copy) => {
-    var col: Column = null;
+    let col: Column = null;
     if ('application/caleydo-lineup-column-ref' in data) {
-      var id = data['application/caleydo-lineup-column-ref'];
+      const id = data['application/caleydo-lineup-column-ref'];
       col = this.data.find(id);
       if (copy) {
         col = this.data.clone(col);
@@ -133,13 +140,13 @@ export default class HeaderRenderer {
         col.removeMe();
       }
     } else {
-      var desc = JSON.parse(data['application/caleydo-lineup-column']);
+      const desc = JSON.parse(data['application/caleydo-lineup-column']);
       col = this.data.create(this.data.fromDescRef(desc));
     }
     if (d instanceof Column) {
       return d.insertAfterMe(col) != null;
     } else {
-      var r = this.data.getLastRanking();
+      const r = this.data.getLastRanking();
       return r.push(col) !== null;
     }
   });
@@ -263,19 +270,18 @@ export default class HeaderRenderer {
     const that = this;
     const rankings = this.data.getRankings();
 
-    var shifts: IFlatColumn[] = [], offset = 0, rankingOffsets = [];
+    let shifts: IFlatColumn[] = [], totalWidth = 0, rankingOffsets = [];
     rankings.forEach((ranking) => {
-      offset += ranking.flatten(shifts, offset, 1, this.options.columnPadding) + this.options.slopeWidth;
-      rankingOffsets.push(offset - this.options.slopeWidth);
+      totalWidth += ranking.flatten(shifts, totalWidth, 1, this.options.columnPadding) + this.options.slopeWidth;
+      rankingOffsets.push(totalWidth - this.options.slopeWidth);
     });
     //real width
-    offset -= this.options.slopeWidth;
-    const totalWidth = offset;
+    totalWidth -= this.options.slopeWidth;
 
     // fix for #179
     this.$node.select('div.drop').style('width', totalWidth + 'px');
 
-    var columns = shifts.map((d) => d.col);
+    const columns = shifts.map((d) => d.col);
 
     //update all if needed
     if (this.options.histograms && this.histCache.size === 0 && rankings.length > 0) {
@@ -288,19 +294,12 @@ export default class HeaderRenderer {
       this.renderRankingButtons(rankings, rankingOffsets);
     }
 
-    function countMultiLevel(c: Column): number {
-      if (isMultiLevelColumn(c) && !(<IMultiLevelColumn>c).getCollapsed() && !c.getCompressed()) {
-        return 1 + Math.max.apply(Math, (<IMultiLevelColumn>c).children.map(countMultiLevel));
-      }
-      return 1;
-    }
-
-    const levels = Math.max.apply(Math, columns.map(countMultiLevel));
-    var height = (this.options.histograms ? this.options.headerHistogramHeight : this.options.headerHeight) + (levels - 1) * this.options.headerHeight;
+    const levels = Math.max(...columns.map(countMultiLevel));
+    let height = (this.options.histograms ? this.options.headerHistogramHeight : this.options.headerHeight) + (levels - 1) * this.options.headerHeight;
 
     if (this.options.autoRotateLabels) {
       //check if we have overflows
-      var rotatedAny = false;
+      let rotatedAny = false;
       this.$node.selectAll<HTMLElement, Column>('div.header')
         .style('height', height + 'px').select<HTMLElement>('div.lu-label').each(function (d: Column) {
         const w = this.querySelector('span.lu-label').offsetWidth;
@@ -322,9 +321,7 @@ export default class HeaderRenderer {
     const filterDialogs = this.options.filterDialogs,
       provider = this.data,
       that = this;
-    var $regular = $node.filter(d=> !(d instanceof Ranking)),
-      $stacked = $node.filter(d=> d instanceof StackColumn),
-      $multilevel = $node.filter(d=> isMultiLevelColumn(d));
+    const $regular = $node.filter(d => !(d instanceof RankColumn));
 
     //edit weights
     $stacked.append<HTMLElement>('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (d) {
@@ -361,6 +358,11 @@ export default class HeaderRenderer {
       openSearchDialog(d, select<HTMLElement, Column>(this.parentElement.parentElement), provider);
       (<MouseEvent>d3event).stopPropagation();
     });
+    //edit weights
+    $node.filter((d) => d instanceof StackColumn).append('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (d) {
+      openEditWeightsDialog(<StackColumn>d, d3.select(this.parentNode.parentNode));
+      (<MouseEvent>d3.event).stopPropagation();
+    });
     //collapse
     $regular.append('i')
       .attr('class', 'fa')
@@ -375,7 +377,7 @@ export default class HeaderRenderer {
         (<MouseEvent>d3event).stopPropagation();
       });
     //compress
-    $multilevel.append('i')
+    $node.filter((d) => isMultiLevelColumn(d)).append('i')
       .attr('class', 'fa')
       .classed('fa-compress', (d: IMultiLevelColumn) => !d.getCollapsed())
       .classed('fa-expand', (d: IMultiLevelColumn) => d.getCollapsed())
@@ -430,7 +432,7 @@ export default class HeaderRenderer {
         e.dataTransfer.effectAllowed = 'copyMove'; //none, copy, copyLink, copyMove, link, linkMove, move, all
         e.dataTransfer.setData('text/plain', d.label);
         e.dataTransfer.setData('application/caleydo-lineup-column-ref', d.id);
-        var ref = JSON.stringify(this.data.toDescRef(d.desc));
+        const ref = JSON.stringify(this.data.toDescRef(d.desc));
         e.dataTransfer.setData('application/caleydo-lineup-column', ref);
         if (isNumberColumn(d)) {
           e.dataTransfer.setData('application/caleydo-lineup-column-number', ref);
@@ -479,9 +481,9 @@ export default class HeaderRenderer {
         that.renderColumns(s_columns, s_shifts, select(this), clazz + (clazz.substr(clazz.length - 2) !== '_i' ? '_i' : ''));
       }
     }).select('div.lu-label').call(dropAble(['application/caleydo-lineup-column-number-ref', 'application/caleydo-lineup-column-number'], (data, d: IMultiLevelColumn, copy) => {
-      var col: Column = null;
+      let col: Column = null;
       if ('application/caleydo-lineup-column-number-ref' in data) {
-        var id = data['application/caleydo-lineup-column-number-ref'];
+        const id = data['application/caleydo-lineup-column-number-ref'];
         col = this.data.find(id);
         if (copy) {
           col = this.data.clone(col);
@@ -489,10 +491,34 @@ export default class HeaderRenderer {
           col.removeMe();
         }
       } else {
-        var desc = JSON.parse(data['application/caleydo-lineup-column-number']);
+        const desc = JSON.parse(data['application/caleydo-lineup-column-number']);
         col = this.data.create(this.data.fromDescRef(desc));
       }
       return d.push(col) != null;
+    }));
+
+    // drag columns on top of each
+    $headers.filter((d) => d.parent instanceof Ranking && isNumberColumn(d) && !isMultiLevelColumn(d)).select('div.lu-label').call(dropAble(['application/caleydo-lineup-column-number-ref', 'application/caleydo-lineup-column-number'], (data, d: Column & INumberColumn, copy) => {
+      let col: Column = null;
+      if ('application/caleydo-lineup-column-number-ref' in data) {
+        const id = data['application/caleydo-lineup-column-number-ref'];
+        col = this.data.find(id);
+        if (copy) {
+          col = this.data.clone(col);
+        } else if (col) {
+          col.removeMe();
+        }
+      } else {
+        const desc = JSON.parse(data['application/caleydo-lineup-column-number']);
+        col = this.data.create(this.data.fromDescRef(desc));
+      }
+      const ranking = d.findMyRanker();
+      const index = ranking.indexOf(d);
+      const stack = <StackColumn>this.data.create(createStackDesc());
+      d.removeMe();
+      stack.push(d);
+      stack.push(col);
+      return ranking.insert(stack, index) != null;
     }));
 
     if (this.options.histograms) {
@@ -534,7 +560,7 @@ export default class HeaderRenderer {
               .attr('data-x', (d) => d.x0);
             $bars_update.exit().remove();
 
-            var $mean = $this.select('div.mean');
+            let $mean = $this.select('div.mean');
             if ($mean.empty()) {
               $mean = $this.append('div').classed('mean', true);
             }

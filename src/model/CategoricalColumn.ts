@@ -9,8 +9,8 @@ import ValueColumn from './ValueColumn';
 import StringColumn from './StringColumn';
 
 export interface ICategoricalColumn {
-  categories: string[];
-  categoryLabels: string[];
+  readonly categories: string[];
+  readonly categoryLabels: string[];
 
   getCategories(row: any, index: number): string[];
 }
@@ -75,8 +75,8 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
 
   initCategories(desc: any) {
     if (desc.categories) {
-      var cats = [],
-        cols = this.colors.range(),
+      let cats = [],
+        cols = this.colors.range().slice(), //work on a copy since it will be manipulated
         labels = new Map<string, string>();
       desc.categories.forEach((cat, i) => {
         if (typeof cat === 'string') {
@@ -136,7 +136,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
 
 
   getLabels(row: any, index:number) {
-    var v = StringColumn.prototype.getValue.call(this, row, index);
+    const v = StringColumn.prototype.getValue.call(this, row, index);
     const r = v ? v.split(this.separator) : [];
 
     const mapToLabel = (values: string[]) => {
@@ -154,9 +154,8 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
   }
 
   getValues(row: any, index: number) {
-    var v = StringColumn.prototype.getValue.call(this, row, index);
-    const r = v ? v.split(this.separator) : [];
-    return r;
+    const v = StringColumn.prototype.getValue.call(this, row, index);
+    return v ? v.split(this.separator) : [];
   }
 
   getCategories(row: any, index: number) {
@@ -164,7 +163,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
   }
 
   getColor(row: any, index: number) {
-    var cat = this.getValue(row, index);
+    const cat = this.getValue(row, index);
     if (cat === null || cat === '') {
       return null;
     }
@@ -176,7 +175,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
   }
 
   dump(toDescRef: (desc: any) => any): any {
-    var r = super.dump(toDescRef);
+    let r = super.dump(toDescRef);
     r.filter = this.currentFilter;
     r.colors = {
       domain: this.colors.domain(),
@@ -210,7 +209,7 @@ export default class CategoricalColumn extends ValueColumn<string> implements IC
     if (!this.isFiltered()) {
       return true;
     }
-    var vs = this.getCategories(row, index),
+    const vs = this.getCategories(row, index),
       filter: any = this.currentFilter;
     return vs.every((v) => {
       if (Array.isArray(filter) && filter.length > 0) { //array mode

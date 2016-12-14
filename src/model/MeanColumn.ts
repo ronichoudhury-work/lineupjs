@@ -21,4 +21,16 @@ export default class MeanColumn extends CompositeNumberColumn {
     }
     return (this._children.reduce((act, d) => act + d.getValue(row, index), 0) / this._children.length);
   }
+
+  /**
+   * describe the column if it is a sorting criteria
+   * @param toId helper to convert a description to an id
+   * @return {string} json compatible
+   */
+  toSortingDesc(toId: (desc: any) => string): any {
+    return {
+      operation: 'avg',
+      operands: this._children.map((c) => c.toSortingDesc(toId))
+    };
+  }
 }

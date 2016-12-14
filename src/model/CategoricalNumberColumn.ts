@@ -127,7 +127,7 @@ export default class CategoricalNumberColumn extends ValueColumn<number> impleme
   }
 
   dump(toDescRef: (desc: any) => any): any {
-    var r = CategoricalColumn.prototype.dump.call(this, toDescRef);
+    let r = CategoricalColumn.prototype.dump.call(this, toDescRef);
     r.scale = {
       domain: this.scale.domain(),
       range: this.scale.range(),
@@ -156,7 +156,7 @@ export default class CategoricalNumberColumn extends ValueColumn<number> impleme
   }
 
   setMapping(range: number[]) {
-    var bak = this.getScale();
+    const bak = this.getScale();
     this.scale.range(range);
     this.fire([CategoricalNumberColumn.EVENT_MAPPING_CHANGED, Column.EVENT_DIRTY_VALUES, Column.EVENT_DIRTY], bak, this.getScale());
   }

@@ -22,7 +22,7 @@ export default class MinColumn extends CompositeNumberColumn {
     if (c.length === 0) {
       return this.color;
     }
-    var min_i = 0, min_v = c[0].getValue(row, index);
+    let min_i = 0, min_v = c[0].getValue(row, index);
     for (let i = 1; i < c.length; ++i) {
       let v = c[i].getValue(row, index);
       if (v < min_v) {
@@ -35,5 +35,17 @@ export default class MinColumn extends CompositeNumberColumn {
 
   protected compute(row: any, index: number) {
     return Math.min(...this._children.map((d) => d.getValue(row, index)));
+  }
+
+  /**
+   * describe the column if it is a sorting criteria
+   * @param toId helper to convert a description to an id
+   * @return {string} json compatible
+   */
+  toSortingDesc(toId: (desc: any) => string): any {
+    return {
+      operation: 'min',
+      operands: this._children.map((c) => c.toSortingDesc(toId))
+    };
   }
 }
