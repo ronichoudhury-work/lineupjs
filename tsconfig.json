@@ -2,14 +2,20 @@
   "compilerOptions": {
     "module": "es6",
     "target": "es5",
-    "noImplicitAny": false,
     "sourceMap": false,
     "jsx": "react",
     "moduleResolution": "node",
     "lib": [
       "dom",
       "es2015"
-    ]
+    ],
+    "noImplicitAny": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "stripInternal": true,
+    "pretty": true
   },
   "include": [
     "src/**/*.ts",
