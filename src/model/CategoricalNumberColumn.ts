@@ -123,7 +123,7 @@ export default class CategoricalNumberColumn extends ValueColumn<number> impleme
     }
   }
 
-  getColors(row: any, index: number) {
+  getColors(row: any, index: number): string[] {
     return CategoricalColumn.prototype.getColors.call(this, row, index);
   }
 

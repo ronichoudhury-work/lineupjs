@@ -20,7 +20,7 @@ export interface IBoxPlotColumn {
   getBoxPlotData(row: any, index: number): IBoxPlotData;
   getDomain(): number[];
   getSortMethod(): string;
-  setSortMethod(sortMethod: string);
+  setSortMethod(sortMethod: string): void;
 }
 
 
@@ -38,8 +38,8 @@ export  interface IBoxPlotData {
 }
 
 export function compareBoxPlot(col: IBoxPlotColumn, a: any, b: any, aIndex: number, bIndex: number) {
-  const aVal = (col.getBoxPlotData(a, aIndex));
-  const bVal = (col.getBoxPlotData(b, bIndex));
+  const aVal: any = (col.getBoxPlotData(a, aIndex));
+  const bVal: any = (col.getBoxPlotData(b, bIndex));
   if (aVal === null) {
     return bVal === null ? 0 : +1;
   }
@@ -52,7 +52,7 @@ export function compareBoxPlot(col: IBoxPlotColumn, a: any, b: any, aIndex: numb
 
 
 export default class BoxPlotColumn extends ValueColumn<IBoxPlotData> implements IBoxPlotColumn {
-  private readonly domain;
+  private readonly domain: number[];
   private sort: SortMethod;
 
   constructor(id: string, desc: IBoxPlotColumnDesc) {

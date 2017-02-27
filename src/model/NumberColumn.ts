@@ -49,10 +49,10 @@ export interface IScale {
   (v: number): number;
 
   domain(): number[];
-  domain(domain: number[]);
+  domain(domain: number[]): this;
 
   range(): number[];
-  range(range: number[]);
+  range(range: number[]): this;
 }
 
 export interface IMappingFunction {
@@ -61,7 +61,7 @@ export interface IMappingFunction {
   apply(v: number): number;
 
   dump(): any;
-  restore(dump: any);
+  restore(dump: any): void;
 
   domain: number[];
 
@@ -151,7 +151,7 @@ export class ScaleMappingFunction implements IMappingFunction {
     };
   }
 
-  eq(other: IMappingFunction) {
+  eq(other: IMappingFunction): boolean {
     if (!(other instanceof ScaleMappingFunction)) {
       return false;
     }
@@ -199,7 +199,7 @@ export class ScriptMappingFunction implements IMappingFunction {
       value_max: max,
       value_range: max - min,
       value_domain: this.domain.slice(),
-      linear: (v, mi, ma) => (v - mi) / (ma - mi)
+      linear: (v: number, mi: number, ma: number) => (v - mi) / (ma - mi)
     }, v);
 
     if (typeof r === 'number') {
@@ -215,7 +215,7 @@ export class ScriptMappingFunction implements IMappingFunction {
     };
   }
 
-  eq(other: IMappingFunction) {
+  eq(other: IMappingFunction): boolean {
     if (!(other instanceof ScriptMappingFunction)) {
       return false;
     }

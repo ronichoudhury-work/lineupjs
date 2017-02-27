@@ -99,7 +99,7 @@ export default class RemoteDataProvider extends ACommonDataProvider {
       // clean up cache
     }
     // const maxLength = Math.max(...orders.map((o) => o.length));
-    const r = [];
+    const r: number[] = [];
     union.forEach(r.push.bind(r));
     return r;
   }

@@ -10,7 +10,7 @@ import Ranking from './Ranking';
  * @param id
  * @return {string|void}
  */
-export function fixCSS(id) {
+export function fixCSS(id: string) {
   return id.replace(/[\s!#$%&'()*+,.\/:;<=>?@\[\\\]\^`{|}~]/g, '_'); //replace non css stuff to _
 }
 

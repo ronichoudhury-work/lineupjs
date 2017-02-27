@@ -4,7 +4,6 @@
 
 import Column, {IColumnParent, fixCSS, IFlatColumn, IColumnDesc} from './Column';
 import StringColumn from './StringColumn';
-import StackColumn from './StackColumn';
 import {AEventDispatcher} from '../utils';
 
 export interface ISortCriteria {
@@ -111,7 +110,7 @@ export default class Ranking extends AEventDispatcher implements IColumnParent {
 
   restore(dump: any, factory: (dump: any) => Column) {
     this.clear();
-    dump.columns.map((child) => {
+    dump.columns.map((child: any) => {
       const c = factory(child);
       if (c) {
         this.push(c);
@@ -279,7 +278,7 @@ export default class Ranking extends AEventDispatcher implements IColumnParent {
   }
 
   find(idOrFilter: (col: Column) => boolean | string) {
-    const filter = typeof(idOrFilter) === 'string' ? (col) => col.id === idOrFilter : idOrFilter;
+    const filter = typeof(idOrFilter) === 'string' ? (col: Column) => col.id === idOrFilter : idOrFilter;
     const r = this.flatColumns;
     for (const v of r) {
       if (filter(v)) {

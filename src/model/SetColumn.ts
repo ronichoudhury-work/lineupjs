@@ -1,8 +1,6 @@
 /**
  * Created by bikramkawan on 24/11/2016.
  */
-import * as d3 from 'd3';
-import Column, {IColumnDesc, IStatistics} from './Column';
 import ValueColumn from './ValueColumn';
 import {IValueColumnDesc} from './ValueColumn';
 
@@ -16,11 +14,11 @@ interface ISetColumnDesc extends IValueColumnDesc <number[]> {
 export default class SetColumn extends ValueColumn<number[]> {
   static readonly IN_GROUP = 1;
 
-  private readonly dataLength;
+  private readonly dataLength: number;
 
   constructor(id: string, desc: ISetColumnDesc) {
     super(id, desc);
-    this.dataLength = (desc.dataLength);
+    this.dataLength = desc.dataLength;
 
   }
 

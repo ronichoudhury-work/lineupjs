@@ -99,7 +99,7 @@ export default class LocalDataProvider extends ACommonDataProvider {
     filterGlobally: false
   };
 
-  private readonly reorderAll;
+  private readonly reorderAll: ()=>void;
 
   constructor(private _data: any[], columns: IColumnDesc[] = [], options: ILocalDataProviderOptions & IDataProviderOptions = {}) {
     super(columns, options);
@@ -107,7 +107,7 @@ export default class LocalDataProvider extends ACommonDataProvider {
 
 
     const that = this;
-    this.reorderAll = function () {
+    this.reorderAll = function (this: {source: Ranking}) {
       //fire for all other rankings a dirty order event, too
       const ranking = this.source;
       that.getRankings().forEach((r) => {
@@ -197,7 +197,6 @@ export default class LocalDataProvider extends ACommonDataProvider {
   }
 
   fetch(orders: number[][]): Promise<IDataRow>[][] {
-    const l = this._data.length;
     return orders.map((order) => order.map((index) => Promise.resolve({
       v: this._data[index],
       dataIndex: index

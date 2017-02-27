@@ -3,13 +3,13 @@
  */
 
 import CompositeColumn, {IMultiLevelColumn} from './CompositeColumn';
-import Column, {IFlatColumn, IColumnDesc} from './Column';
+import Column, {IFlatColumn} from './Column';
 import StackColumn from './StackColumn';
 
 export default class MultiLevelCompositeColumn extends CompositeColumn implements IMultiLevelColumn {
   static readonly EVENT_COLLAPSE_CHANGED = StackColumn.EVENT_COLLAPSE_CHANGED;
 
-  private readonly adaptChange;
+  private readonly adaptChange = (old: number, newValue: number) => this.adaptWidthChange(old, newValue);
 
   /**
    * whether this stack column is collapsed i.e. just looks like an ordinary number column
@@ -17,14 +17,6 @@ export default class MultiLevelCompositeColumn extends CompositeColumn implement
    * @private
    */
   private collapsed = false;
-
-  constructor(id: string, desc: IColumnDesc) {
-    super(id, desc);
-    const that = this;
-    this.adaptChange = function (old, newValue) {
-      that.adaptWidthChange(old, newValue);
-    };
-  }
 
   protected createEventList() {
     return super.createEventList().concat([MultiLevelCompositeColumn.EVENT_COLLAPSE_CHANGED]);
@@ -96,7 +88,7 @@ export default class MultiLevelCompositeColumn extends CompositeColumn implement
     super.setWidth(value);
   }
 
-  getrendererType() {
+  getRendererType() {
     if (this.getCollapsed()) {
       return MultiLevelCompositeColumn.EVENT_COLLAPSE_CHANGED;
     }

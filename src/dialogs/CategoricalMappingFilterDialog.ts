@@ -1,6 +1,5 @@
 import AFilterDialog from './AFilterDialog';
 import CategoricalNumberColumn from '../model/CategoricalNumberColumn';
-import DataProvider from '../provider/ADataProvider';
 import {scale as d3scale} from 'd3';
 
 
@@ -50,7 +49,7 @@ export default class CategoricalMappingFilterDialog extends AFilterDialog<Catego
       min: 0,
       max: 100,
       size: 5
-    }).on('input', function (d) {
+    }).on('input', function (this: HTMLInputElement, d) {
       d.range = +this.value;
       redraw();
     });

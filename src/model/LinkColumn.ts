@@ -21,7 +21,7 @@ export default class LinkColumn extends StringColumn {
    * a pattern used for generating the link, $1 is replaced with the actual value
    * @type {null}
    */
-  private link = null;
+  private link: string = null;
 
   constructor(id: string, desc: any) {
     super(id, desc);

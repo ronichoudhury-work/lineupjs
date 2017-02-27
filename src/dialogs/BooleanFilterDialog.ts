@@ -1,5 +1,4 @@
 import BooleanColumn from '../model/BooleanColumn';
-import Column from '../model/Column';
 import AFilterDialog from './AFilterDialog';
 import {Selection} from 'd3';
 
@@ -43,7 +42,7 @@ export default class BooleanFilterDialog extends AFilterDialog<BooleanColumn> {
     });
     $popup.select('.reset').on('click', function () {
       const v = bak === null ? 'null' : String(bak);
-      $popup.selectAll('input[type="radio"]').property('checked', function () {
+      $popup.selectAll('input[type="radio"]').property('checked', function (this: HTMLInputElement) {
         return this.value === v;
       });
       updateData(null);

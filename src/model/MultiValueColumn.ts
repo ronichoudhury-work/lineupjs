@@ -66,11 +66,11 @@ export interface IMultiValueColumnDesc extends IValueColumnDesc<number[]> {
 
 
 export default class MultiValueColumn extends ValueColumn<number[]> implements IBoxPlotColumn,IMultiValueColumn {
-  private readonly domain;
+  private readonly domain: number[];
   private sort: SortMethod;
-  private readonly threshold;
-  private readonly dataLength;
-  private readonly colorRange;
+  private readonly threshold: number;
+  private readonly dataLength: number;
+  private readonly colorRange: string[];
 
   constructor(id: string, desc: IMultiValueColumnDesc) {
     super(id, desc);

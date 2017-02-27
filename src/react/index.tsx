@@ -39,8 +39,8 @@ export default class LineUp<T> extends React.Component<ILineUpProps<T>, {}> {
   };
 
   static readonly defaultProps = {
-    data: [],
-    desc: []
+    data: [] as any[],
+    desc: [] as any[]
   };
 
   private plot: Impl = null;

@@ -116,7 +116,7 @@ abstract class ADataProvider extends AEventDispatcher {
    */
   readonly columnTypes: {[columnType: string]: typeof Column};
 
-  private readonly multiSelections;
+  private readonly multiSelections: boolean;
 
   constructor(options: IDataProviderOptions = {}) {
     super();
@@ -174,7 +174,7 @@ abstract class ADataProvider extends AEventDispatcher {
       Ranking.EVENT_ORDER_CHANGED + '.provider', Ranking.EVENT_DIRTY_VALUES + '.provider');
     const that = this;
     //delayed reordering per ranking
-    r.on(Ranking.EVENT_DIRTY_ORDER + '.provider', delayedCall(function () {
+    r.on(Ranking.EVENT_DIRTY_ORDER + '.provider', delayedCall(function (this: {source: Column}) {
       that.triggerReorder(this.source);
     }, 100, null));
     this.fire([ADataProvider.EVENT_ADD_RANKING, ADataProvider.EVENT_DIRTY_HEADER, ADataProvider.EVENT_DIRTY_VALUES, ADataProvider.EVENT_DIRTY], r, index);
@@ -290,7 +290,7 @@ abstract class ADataProvider extends AEventDispatcher {
     return 'col' + (this.uid++);
   }
 
-  protected abstract rankAccessor(row: any, index: number, id: string, desc: IColumnDesc, ranking: Ranking);
+  protected abstract rankAccessor(row: any, index: number, id: string, desc: IColumnDesc, ranking: Ranking): number;
 
   private fixDesc(desc: IColumnDesc) {
     //hacks for provider dependent descriptors
@@ -432,13 +432,13 @@ abstract class ADataProvider extends AEventDispatcher {
     //restore selection
     this.uid = dump.uid || 0;
     if (dump.selection) {
-      dump.selection.forEach((s) => this.selection.add(s));
+      dump.selection.forEach((s: number) => this.selection.add(s));
     }
 
 
     //restore rankings
     if (dump.rankings) {
-      dump.rankings.forEach((r) => {
+      dump.rankings.forEach((r: any) => {
         const ranking = this.cloneRanking();
         ranking.restore(r, this.createHelper);
         //if no rank column add one
@@ -460,7 +460,7 @@ abstract class ADataProvider extends AEventDispatcher {
     });
   }
 
-  abstract findDesc(ref: string);
+  abstract findDesc(ref: string): IColumnDesc;
 
   /**
    * generates a default ranking by using all column descriptions ones
@@ -485,7 +485,7 @@ abstract class ADataProvider extends AEventDispatcher {
   private deriveRanking(bundle: any[]) {
     const ranking = this.cloneRanking();
     ranking.clear();
-    const toCol = (column) => {
+    const toCol = (column: any) => {
       switch (column.type) {
         case 'rank':
           return this.create(createRankDesc());
@@ -498,7 +498,7 @@ abstract class ADataProvider extends AEventDispatcher {
         case 'stacked':
           //create a stacked one
           const stacked = <StackColumn>this.create(createStackDesc(column.label || 'Combined'));
-          (column.children || []).forEach((col) => {
+          (column.children || []).forEach((col: any) => {
             const c = toCol(col);
             if (c) {
               stacked.push(c);
@@ -509,7 +509,7 @@ abstract class ADataProvider extends AEventDispatcher {
           const desc = this.findDesc(column.column);
           if (desc) {
             const r = this.create(desc);
-            column.label = column.label || desc.label || desc.column;
+            column.label = column.label || desc.label || (<any>desc).column;
             r.restore(column, null);
             return r;
           }
@@ -590,7 +590,7 @@ abstract class ADataProvider extends AEventDispatcher {
    * @param search
    * @param col
    */
-  abstract searchAndJump(search: string|RegExp, col: Column);
+  abstract searchAndJump(search: string|RegExp, col: Column): void;
 
   jumpToNearest(indices: number[]) {
     if (indices.length === 0) {
@@ -681,7 +681,7 @@ abstract class ADataProvider extends AEventDispatcher {
    * @returns {Array}
    */
   getSelection() {
-    const indices = [];
+    const indices: number[] = [];
     this.selection.forEach((s) => indices.push(s));
     indices.sort();
     return indices;
@@ -711,7 +711,7 @@ abstract class ADataProvider extends AEventDispatcher {
       header: true,
       quote: false,
       quoteChar: '"',
-      filter: (c) => !isSupportType(c)
+      filter: (c: Column) => !isSupportType(c)
     }, options);
     //optionally quote not numbers
     function quote(l: string, c?: Column) {
