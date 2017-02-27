@@ -9,6 +9,7 @@ import {createSVG} from '../renderer/index';
 import {ISlicer, IBodyRenderContext, IRankingData} from './ABodyRenderer';
 import ADOMBodyRenderer from './ADOMBodyRenderer';
 import {IDOMRenderContext} from '../renderer/RendererContexts';
+import {IFlatColumn} from '../model/Column';
 
 const domMappings = {
   svg: {
@@ -34,7 +35,7 @@ const domMappings = {
         .attr('y2', height);
     },
     slopes: 'g',
-    updateSlopes: ($slopes: Selection<any>, width: number, height: number, callback: (d, i) => number) => {
+    updateSlopes: ($slopes: Selection<any>, width: number, height: number, callback: (d: any, i: number) => number) => {
       $slopes.attr('transform', (d, i) => `translate(${callback(d, i)},0)`);
     },
     creator: createSVG,
@@ -62,7 +63,7 @@ export default class SVGBodyRenderer extends ADOMBodyRenderer {
     //generate clip paths for the text columns to avoid text overflow
     //see http://stackoverflow.com/questions/L742812/cannot-select-svg-foreignobject-element-in-d3
     //there is a bug in webkit which present camelCase selectors
-    const textClipPath = $base.selectAll(function () {
+    const textClipPath = $base.selectAll(function (this: SVGElement) {
       return this.getElementsByTagName('clipPath');
     }).data(r, (d) => d.id);
     textClipPath.enter().append('clipPath')
@@ -78,7 +79,7 @@ export default class SVGBodyRenderer extends ADOMBodyRenderer {
   }
 
   updateClipPaths(data: IRankingData[], context: IBodyRenderContext&IDOMRenderContext, height: number) {
-    const shifts = [];
+    const shifts: IFlatColumn[] = [];
     let offset = 0;
     data.forEach((r) => {
       const w = r.ranking.flatten(shifts, offset, 2, this.options.columnPadding);

@@ -20,20 +20,20 @@ export interface IDOMMapping {
   root: string;
   g: string;
 
-  setSize(n: HTMLElement, width: number, height: number);
+  setSize(n: HTMLElement, width: number, height: number): void;
 
-  translate(n: SVGElement | HTMLElement, x: number, y: number);
-  transform<T>(sel: d3.Selection<T>, callback: (d: T, i: number) => [number, number]);
+  translate(n: SVGElement | HTMLElement, x: number, y: number): void;
+  transform<T>(sel: d3.Selection<T>, callback: (d: T, i: number) => [number, number]): void;
   creator(col: Column, renderers: {[key: string]: ICellRendererFactory}, context: IDOMRenderContext): IDOMCellRenderer<SVGElement | HTMLElement>;
 
   bg: string;
-  updateBG(sel: d3.Selection<any>, callback: (d: any, i: number, j: number) => [number, number]);
+  updateBG(sel: d3.Selection<any>, callback: (d: any, i: number, j: number) => [number, number]): void;
 
   meanLine: string;
-  updateMeanLine($mean: d3.Selection<any>, x: number, height: number);
+  updateMeanLine($mean: d3.Selection<any>, x: number, height: number): void;
 
   slopes: string;
-  updateSlopes($slopes: d3.Selection<any>, width: number, height: number, callback: (d, i) => number);
+  updateSlopes($slopes: d3.Selection<any>, width: number, height: number, callback: (d: any, i: number) => number): void;
 }
 
 abstract class ABodyDOMRenderer extends ABodyRenderer {
@@ -59,19 +59,19 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
     const $rankings = $body.selectAll(g + '.ranking').data(data, (d) => d.id);
     const $rankingsEnter = $rankings.enter().append(g)
       .attr('class', 'ranking')
-      .call(domMapping.transform, (d) => [d.shift, 0]);
+      .call(domMapping.transform, (d: IRankingData) => [d.shift, 0]);
     $rankingsEnter.append(g).attr('class', 'rows');
     $rankingsEnter.append(g).attr('class', 'meanlines').attr('clip-path', `url(#c${this.options.idPrefix}Freeze)`);
 
     //animated shift
-    this.animated($rankings).call(domMapping.transform, (d, i) => [d.shift, 0]);
+    this.animated($rankings).call(domMapping.transform, (d: IRankingData) => [d.shift, 0]);
 
 
     const toWait: Promise<any>[] = [];
     {
       const $rows = $rankings.select(g + '.rows').selectAll(g + '.row').data((d) => d.order, String);
       const $rowsEnter = $rows.enter().append(g).attr('class', 'row');
-      $rowsEnter.call(domMapping.transform, (d, i) => [0, context.cellPrevY(i)]);
+      $rowsEnter.call(domMapping.transform, (d: any, i: number) => [0, context.cellPrevY(i)]);
 
       $rowsEnter.append(domMapping.bg).attr('class', 'bg');
       $rowsEnter
@@ -89,11 +89,11 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
         });
       };
 
-      $rowsEnter.append(g).attr('class', 'cols').attr('clip-path', `url(#c${this.options.idPrefix}Freeze)`).each(function (d, i, j) {
+      $rowsEnter.append(g).attr('class', 'cols').attr('clip-path', `url(#c${this.options.idPrefix}Freeze)`).each(function (this: HTMLElement|SVGGElement, d, i, j) {
         createTemplates(this, data[j].columns);
       });
 
-      $rowsEnter.append(g).attr('class', 'frozen').call(this.domMapping.transform, () => [this.currentFreezeLeft, 0]).each(function (d, i, j) {
+      $rowsEnter.append(g).attr('class', 'frozen').call(this.domMapping.transform, () => [this.currentFreezeLeft, 0]).each(function (this: HTMLElement|SVGGElement, d, i, j) {
         createTemplates(this, data[j].frozen);
       });
 
@@ -104,11 +104,11 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
       //.classed('highlighted', (d) => this.data.isHighlighted(d.d));
 
       //animated reordering
-      this.animated($rows).call(domMapping.transform, (d, i) => [0, context.cellY(i)]);
+      this.animated($rows).call(domMapping.transform, (d: any, i: number) => [0, context.cellY(i)]);
 
       //update background helper
       $rows.select(domMapping.bg).attr('class', 'bg')
-        .call(domMapping.updateBG, (d, i, j) => [data[j].width, context.rowHeight(i)]);
+        .call(domMapping.updateBG, (d: any, i: number, j: number) => [data[j].width, context.rowHeight(i)]);
 
       const updateColumns = (node: SVGGElement | HTMLElement, r: IRankingData, i: number, columns: IRankingColumnData[]) => {
         //update nodes and create templates
@@ -123,12 +123,12 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
       };
       //update columns
 
-      $rows.select(g + '.cols').each(function (d, i, j) {
+      $rows.select(g + '.cols').each(function (this: HTMLElement|SVGGElement, d, i, j) {
         toWait.push(updateColumns(this, data[j], i, data[j].columns));
       });
       //order for frozen in html + set the size in html to have a proper background instead of a clip-path
       const maxFrozen = data.length === 0 || data[0].frozen.length === 0 ? 0 : d3.max(data[0].frozen, (f) => f.shift + f.column.getWidth());
-      $rows.select(g + '.frozen').each(function (d, i, j) {
+      $rows.select(g + '.frozen').each(function (this: HTMLElement, d, i, j) {
         domMapping.setSize(this, maxFrozen, that.options.rowHeight);
         toWait.push(updateColumns(this, data[j], i, data[j].frozen));
       });
@@ -138,7 +138,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
     {
       const $meanlines = $rankings.select(g + '.meanlines').selectAll(domMapping.meanLine + '.meanline').data((d) => d.columns.filter((c) => this.showMeanLine(c.column)));
       $meanlines.enter().append(domMapping.meanLine).attr('class', 'meanline');
-      $meanlines.each(function (d) {
+      $meanlines.each(function (this: HTMLElement|SVGGElement, d) {
         const h = that.histCache.get(d.column.id);
         const $mean = d3.select(this);
         if (!h) {
@@ -194,7 +194,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
     const $slopes = $parent.selectAll(this.domMapping.slopes + '.slopegraph').data(slopes);
     $slopes.enter().append(this.domMapping.slopes).attr('class', 'slopegraph');
     //$slopes.attr('transform', (d, i) => `translate(${(shifts[i + 1].shift - this.options.slopeWidth)},0)`);
-    $slopes.call(this.domMapping.updateSlopes, this.options.slopeWidth, height, (d, i) => ((data[i + 1].shift - this.options.slopeWidth)));
+    $slopes.call(this.domMapping.updateSlopes, this.options.slopeWidth, height, (d: any, i: number) => ((data[i + 1].shift - this.options.slopeWidth)));
 
     const $lines = $slopes.selectAll('line.slope').data((d) => {
       const cache = new Map<number,number>();
@@ -231,7 +231,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
     this.currentFreezeLeft = left;
   }
 
-  protected abstract updateClipPaths(data: IRankingData[], context: IBodyRenderContext&IDOMRenderContext, height: number);
+  protected abstract updateClipPaths(data: IRankingData[], context: IBodyRenderContext&IDOMRenderContext, height: number): void;
 
   protected createContextImpl(indexShift: number): IBodyRenderContext {
     return this.createContext(indexShift, this.domMapping.creator);

@@ -50,7 +50,7 @@ export interface IRankingHook {
   ($node: d3.Selection<Ranking>): void;
 }
 
-export function dummyRankingButtonHook() {
+export function dummyRankingButtonHook(): void {
   return null;
 }
 
@@ -120,19 +120,19 @@ export default class HeaderRenderer {
 
   private readonly dragHandler = d3.behavior.drag<Column>()
   //.origin((d) => d)
-    .on('dragstart', function () {
+    .on('dragstart', function (this: HTMLElement) {
       d3.select(this).classed('dragging', true);
       (<any>d3.event).sourceEvent.stopPropagation();
       (<any>d3.event).sourceEvent.preventDefault();
     })
-    .on('drag', function (d) {
+    .on('drag', function (this: HTMLElement, d) {
       //the new width
       const newValue = Math.max(d3.mouse(this.parentNode)[0], 2);
       d.setWidth(newValue);
       (<any>d3.event).sourceEvent.stopPropagation();
       (<any>d3.event).sourceEvent.preventDefault();
     })
-    .on('dragend', function () {
+    .on('dragend', function (this: HTMLElement) {
       d3.select(this).classed('dragging', false);
       (<any>d3.event).sourceEvent.stopPropagation();
 
@@ -279,7 +279,7 @@ export default class HeaderRenderer {
     const that = this;
     const rankings = this.data.getRankings();
 
-    const shifts: IFlatColumn[] = [], rankingOffsets = [];
+    const shifts: IFlatColumn[] = [], rankingOffsets: number[] = [];
     let totalWidth = 0;
     rankings.forEach((ranking) => {
       totalWidth += ranking.flatten(shifts, totalWidth, 1, this.options.columnPadding) + this.options.slopeWidth;
@@ -311,8 +311,8 @@ export default class HeaderRenderer {
       //check if we have overflows
       let rotatedAny = false;
       this.$node.selectAll('div.header')
-        .style('height', height + 'px').select('div.lu-label').each(function (d) {
-        const w = this.querySelector('span.lu-label').offsetWidth;
+        .style('height', height + 'px').select('div.lu-label').each(function (this: HTMLElement, d) {
+        const w = (<HTMLElement>this.querySelector('span.lu-label')).offsetWidth;
         const actWidth = d.getWidth();
         if (w > (actWidth + 30)) { //rotate
           d3.select(this).style('transform', `rotate(${that.options.rotationDegree}deg)`);
@@ -333,7 +333,7 @@ export default class HeaderRenderer {
     const $regular = $node.filter((d) => !(d instanceof RankColumn));
 
     //rename
-    $regular.append('i').attr('class', 'fa fa-pencil-square-o').attr('title', 'Rename').on('click', function (d) {
+    $regular.append('i').attr('class', 'fa fa-pencil-square-o').attr('title', 'Rename').on('click', function (this: HTMLElement, d) {
       const dialog = new RenameDialog(d, d3.select(this.parentNode.parentNode));
       dialog.openDialog();
       (<MouseEvent>d3.event).stopPropagation();
@@ -345,7 +345,7 @@ export default class HeaderRenderer {
     });
 
     //MultiValue Sort
-    $node.filter((d) => d instanceof MultiValueColumn || d instanceof BoxPlotColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (d) {
+    $node.filter((d) => d instanceof MultiValueColumn || d instanceof BoxPlotColumn).append('i').attr('class', 'fa fa-sort').attr('title', 'Sort By').on('click', function (this: HTMLElement, d) {
       const dialog = new SortDialog(<IBoxPlotColumn><any>d, d3.select(this.parentNode.parentNode));
       dialog.openDialog();
       (<MouseEvent>d3.event).stopPropagation();
@@ -353,7 +353,7 @@ export default class HeaderRenderer {
 
 
     //Renderer Change
-    $node.filter((d) => d.getRendererList().length > 1).append('i').attr('class', 'fa fa-exchange').attr('title', 'Change Visualization').on('click', function (d) {
+    $node.filter((d) => d.getRendererList().length > 1).append('i').attr('class', 'fa fa-exchange').attr('title', 'Change Visualization').on('click', function (this: HTMLElement, d) {
       const dialog = new RendererTypeDialog(d, d3.select(this.parentNode.parentNode));
       dialog.openDialog();
       (<MouseEvent>d3.event).stopPropagation();
@@ -361,13 +361,13 @@ export default class HeaderRenderer {
 
 
     //edit link
-    $node.filter((d) => d instanceof LinkColumn).append('i').attr('class', 'fa fa-external-link').attr('title', 'Edit Link Pattern').on('click', function (d) {
+    $node.filter((d) => d instanceof LinkColumn).append('i').attr('class', 'fa fa-external-link').attr('title', 'Edit Link Pattern').on('click', function (this: HTMLElement, d) {
       const dialog = new EditLinkDialog(<LinkColumn>d, d3.select(this.parentNode.parentNode), that.options.idPrefix, [].concat((<any>d.desc).templates || [], that.options.linkTemplates));
       dialog.openDialog();
       (<MouseEvent>d3.event).stopPropagation();
     });
     //edit script
-    $node.filter((d) => d instanceof ScriptColumn).append('i').attr('class', 'fa fa-gears').attr('title', 'Edit Combine Script').on('click', function (d) {
+    $node.filter((d) => d instanceof ScriptColumn).append('i').attr('class', 'fa fa-gears').attr('title', 'Edit Combine Script').on('click', function (this: HTMLElement, d) {
       const dialog = new ScriptEditDialog(<ScriptColumn>d, d3.select(this.parentNode.parentNode));
       dialog.openDialog();
       (<MouseEvent>d3.event).stopPropagation();
@@ -380,13 +380,13 @@ export default class HeaderRenderer {
       (<MouseEvent>d3.event).stopPropagation();
     });
     //search
-    $node.filter((d) => this.options.searchAble(d)).append('i').attr('class', 'fa fa-search').attr('title', 'Search').on('click', function (d) {
+    $node.filter((d) => this.options.searchAble(d)).append('i').attr('class', 'fa fa-search').attr('title', 'Search').on('click', function (this: HTMLElement, d) {
       const dialog = new SearchDialog(d, d3.select(this.parentNode.parentNode), provider);
       dialog.openDialog();
       (<MouseEvent>d3.event).stopPropagation();
     });
     //edit weights
-    $node.filter((d) => d instanceof StackColumn).append('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (d) {
+    $node.filter((d) => d instanceof StackColumn).append('i').attr('class', 'fa fa-tasks').attr('title', 'Edit Weights').on('click', function (this: HTMLElement, d) {
       const dialog = new WeightsEditDialog(<StackColumn>d, d3.select(this.parentNode.parentNode));
       dialog.openDialog();
       (<MouseEvent>d3.event).stopPropagation();
@@ -397,7 +397,7 @@ export default class HeaderRenderer {
       .classed('fa-toggle-left', (d: Column) => !d.getCompressed())
       .classed('fa-toggle-right', (d: Column) => d.getCompressed())
       .attr('title', '(Un)Collapse')
-      .on('click', function (d: Column) {
+      .on('click', function (this: HTMLElement, d: Column) {
         d.setCompressed(!d.getCompressed());
         d3.select(this)
           .classed('fa-toggle-left', !d.getCompressed())
@@ -410,7 +410,7 @@ export default class HeaderRenderer {
       .classed('fa-compress', (d: IMultiLevelColumn) => !d.getCollapsed())
       .classed('fa-expand', (d: IMultiLevelColumn) => d.getCollapsed())
       .attr('title', 'Compress/Expand')
-      .on('click', function (d: IMultiLevelColumn) {
+      .on('click', function (this: HTMLElement, d: IMultiLevelColumn) {
         d.setCollapsed(!d.getCollapsed());
         d3.select(this)
           .classed('fa-compress', !d.getCollapsed())
@@ -503,7 +503,7 @@ export default class HeaderRenderer {
     });
     $headers.select('span.lu-label').text((d) => d.label);
 
-    const resolveDrop = (data: string[], copy: boolean) => {
+    const resolveDrop = (data: any, copy: boolean) => {
       if ('application/caleydo-lineup-column-number-ref' in data) {
         const id = data['application/caleydo-lineup-column-number-ref'];
         let col: Column = this.data.find(id);
@@ -519,11 +519,11 @@ export default class HeaderRenderer {
       }
     };
 
-    $headers.filter((d) => isMultiLevelColumn(d)).each(function (col: IMultiLevelColumn) {
+    $headers.filter((d) => isMultiLevelColumn(d)).each(function (this: HTMLElement, col: IMultiLevelColumn) {
       if (col.getCollapsed() || col.getCompressed()) {
         d3.select(this).selectAll('div.' + clazz + '_i').remove();
       } else {
-        const sShifts = [];
+        const sShifts: IFlatColumn[]= [];
         col.flatten(sShifts, 0, 1, that.options.columnPadding);
 
         const sColumns = sShifts.map((d) => d.col);
@@ -548,7 +548,7 @@ export default class HeaderRenderer {
 
     if (this.options.histograms) {
 
-      $headers.filter((d) => isCategoricalColumn(d)).each(function (col: CategoricalColumn) {
+      $headers.filter((d) => isCategoricalColumn(d)).each(function (this: HTMLElement, col: CategoricalColumn) {
         const $this = d3.select(this).select('div.histogram');
         const hist = that.histCache.get(col.id);
         if (hist) {
@@ -571,7 +571,7 @@ export default class HeaderRenderer {
           });
         }
       });
-      $headers.filter((d) => d instanceof NumberColumn).each(function (col: Column) {
+      $headers.filter((d) => d instanceof NumberColumn).each(function (this: HTMLElement, col: Column) {
         const $this = d3.select(this).select('div.histogram');
         const hist = that.histCache.get(col.id);
         if (hist) {

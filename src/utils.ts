@@ -13,9 +13,9 @@ import {IDOMCellRenderer} from './renderer/IDOMCellRenderers';
  * @param thisCallback this argument of the callback
  * @return {function(...[any]): undefined} a function that can be called with the same interface as the callback but delayed
  */
-export function delayedCall(callback: (...args: any[]) => void, timeToDelay = 100, thisCallback = this) {
+export function delayedCall(this: any, callback: (...args: any[]) => void, timeToDelay = 100, thisCallback = this) {
   let tm = -1;
-  return function (...args: any[]) {
+  return function (this: any, ...args: any[]) {
     if (tm >= 0) {
       clearTimeout(tm);
       tm = -1;
@@ -30,13 +30,13 @@ export function delayedCall(callback: (...args: any[]) => void, timeToDelay = 10
  */
 export class AEventDispatcher {
   private listeners: Dispatch;
-  private forwarder;
+  private forwarder: (...args: any[])=>void;
 
   constructor() {
     this.listeners = dispatch(...this.createEventList());
 
     const that = this;
-    this.forwarder = function (...args: any[]) {
+    this.forwarder = function (this: {type: string}, ...args: any[]) {
       that.fire(this.type, ...args);
     };
   }
@@ -64,7 +64,7 @@ export class AEventDispatcher {
   }
 
   protected fire(type: string|string[], ...args: any[]) {
-    const fireImpl = (t) => {
+    const fireImpl = (t: string) => {
       //local context per event, set a this argument
       const context = {
         source: this, //who is sending this event
@@ -142,7 +142,7 @@ export function merge(...args: any[]) {
  * @param element
  * @return {{left: number, top: number, width: number, height: number}}
  */
-export function offset(element) {
+export function offset(element: Element) {
   const obj = element.getBoundingClientRect();
   return {
     left: obj.left + window.pageXOffset,
@@ -191,7 +191,7 @@ export class ContentScroller extends AEventDispatcher {
    * @param content the content element to scroll
    * @param options options see attribute
    */
-  constructor(private container: Element, private content: Element, options: IContentScrollerOptions = {}) {
+  constructor(private container: Element, content: Element, options: IContentScrollerOptions = {}) {
     super();
     merge(this.options, options);
     select(container).on('scroll.scroller', () => this.onScroll());
@@ -335,8 +335,8 @@ export function updateDropEffect(e: DragEvent) {
  * @param onDrop: handler when an element is dropped
  */
 export function dropAble<T>(mimeTypes: string[], onDrop: (data: any, d: T, copy: boolean) => boolean) {
-  return ($node) => {
-    $node.on('dragenter', function () {
+  return ($node: d3.Selection<T>) => {
+    $node.on('dragenter', function (this: Element) {
       const e = <DragEvent>(<any>d3event);
       //var xy = mouse($node.node());
       if (hasDnDType(e, mimeTypes)) {
@@ -346,7 +346,8 @@ export function dropAble<T>(mimeTypes: string[], onDrop: (data: any, d: T, copy:
       }
       //not a valid mime type
       select(this).classed('drag_over', false);
-    }).on('dragover', function () {
+      return undefined;
+    }).on('dragover', function (this: Element) {
       const e = <DragEvent>(<any>d3event);
       if (hasDnDType(e, mimeTypes)) {
         e.preventDefault();
@@ -354,10 +355,11 @@ export function dropAble<T>(mimeTypes: string[], onDrop: (data: any, d: T, copy:
         select(this).classed('drag_over', true);
         return false;
       }
-    }).on('dragleave', function () {
+      return undefined;
+    }).on('dragleave', function (this: Element) {
       //
       select(this).classed('drag_over', false);
-    }).on('drop', function (d: T) {
+    }).on('drop', function (this: Element, d: T) {
       const e = <DragEvent>(<any>d3event);
       e.preventDefault();
       select(this).classed('drag_over', false);
@@ -373,6 +375,7 @@ export function dropAble<T>(mimeTypes: string[], onDrop: (data: any, d: T, copy:
         });
         return onDrop(data, d, copyDnD(e));
       }
+      return undefined;
     });
   };
 }
@@ -385,7 +388,7 @@ export function dropAble<T>(mimeTypes: string[], onDrop: (data: any, d: T, copy:
  * @param styles
  * @return {T}
  */
-export function attr<T extends (HTMLElement | SVGElement & SVGStylable)>(node: T, attrs = {}, styles = {}): T {
+export function attr<T extends (HTMLElement | SVGElement & SVGStylable)>(node: T, attrs: {[key: string]: any}= {}, styles: {[key: string]: any} = {}): T {
   Object.keys(attrs).forEach((attr) => node.setAttribute(attr, String(attrs[attr])));
   Object.keys(styles).forEach((attr) => node.style.setProperty(attr, styles[attr]));
   return node;
@@ -516,7 +519,7 @@ export function matchColumns(node: SVGGElement | HTMLElement, columns: {column: 
 
   const idsAndRenderer = new Set(columns.map((c) => c.column.id + '@' + c.column.getRendererType()));
   //remove all that are not existing anymore
-  Array.prototype.slice.call(node.childNodes).forEach((n) => {
+  Array.prototype.slice.call(node.childNodes).forEach((n: Element) => {
     const id = n.getAttribute('data-column-id');
     const renderer = n.getAttribute('data-renderer');
     const idAndRenderer = id + '@' + renderer;

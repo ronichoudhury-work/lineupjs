@@ -354,7 +354,7 @@ export default class LineUp extends AEventDispatcher {
   }
 
   changeRenderingOption(option: string, value: boolean) {
-    this.config.renderingOptions[option] = value;
+    (<any>this.config.renderingOptions)[option] = value;
     if (option === 'animation' || option === 'stacked') {
       this.body.setOption(option, value);
       this.body.update();

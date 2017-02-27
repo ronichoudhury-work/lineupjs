@@ -196,7 +196,7 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
     return Promise.all(cols.map((d) => {
       const h = this.histCache.get(d.column.id);
       if (!h) {
-        return;
+        return null;
       }
       return h.then((stats: IStatistics) => {
         const xPos = d.shift + d.column.getWidth() * stats.mean;
@@ -212,7 +212,7 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
     }));
   }
 
-  renderRankings(ctx: CanvasRenderingContext2D, data: IRankingData[], context: IBodyRenderContext&ICanvasRenderContext, height) {
+  renderRankings(ctx: CanvasRenderingContext2D, data: IRankingData[], context: IBodyRenderContext&ICanvasRenderContext, height: number) {
 
     const renderRow = this.renderRow.bind(this, ctx, context);
 
@@ -279,7 +279,7 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
   }
 
   private computeShifts(data: IRankingData[]) {
-    const r = [];
+    const r: {column: Column, shift: number}[] = [];
     data.forEach((d) => {
       const base = d.shift;
       r.push(...d.frozen.map((c) => ({column: c.column, shift: c.shift + base + this.currentFreezeLeft})));

@@ -21,19 +21,19 @@ export interface IBodyRenderer extends AEventDispatcher {
 
   readonly node: Element;
 
-  setOption(key: string, value: any);
+  setOption(key: string, value: any): void;
 
-  changeDataStorage(data: DataProvider);
+  changeDataStorage(data: DataProvider): void;
 
-  select(dataIndex: number, additional?: boolean);
+  select(dataIndex: number, additional?: boolean): void;
 
-  updateFreeze(left: number);
+  updateFreeze(left: number): void;
 
-  scrolled();
+  scrolled(): void;
 
-  update();
+  update(): void;
 
-  fakeHover(dataIndex: number);
+  fakeHover(dataIndex: number): void;
 }
 
 export interface IBodyRenderContext extends IRenderContext<any> {
@@ -133,7 +133,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
   }
 
   setOption(key: string, value: any) {
-    this.options[key] = value;
+    (<any>this.options)[key] = value;
   }
 
   changeDataStorage(data: DataProvider) {
@@ -155,7 +155,8 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
   }
 
   protected createContext(indexShift: number, creator: (col: Column, renderers: {[key: string]: ICellRendererFactory}, context: IRenderContext<any>) => any): IBodyRenderContext {
-    const options = this.options;
+    const options: {[key: string]: any} = this.options;
+    const that = this;
 
     function findOption(key: string, defaultValue: any) {
       if (key in options) {
@@ -175,14 +176,14 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
       cellY: (index: number) => (index + indexShift) * (this.options.rowHeight),
       cellPrevY: (index: number) => (index + indexShift) * (this.options.rowHeight),
 
-      idPrefix: options.idPrefix,
+      idPrefix: this.options.idPrefix,
 
       option: findOption,
 
-      rowHeight: () => options.rowHeight - options.rowPadding,
+      rowHeight: () => this.options.rowHeight - this.options.rowPadding,
 
-      renderer(col: Column) {
-        return creator(col, options.renderers, this);
+      renderer(this: IBodyRenderContext, col: Column) {
+        return creator(col, that.options.renderers, this);
       }
     };
   }
@@ -191,7 +192,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
     return this.data.toggleSelection(dataIndex, additional);
   }
 
-  abstract drawSelection();
+  abstract drawSelection(): void;
 
   fakeHover(dataIndex: number) {
     this.mouseOver(dataIndex, true);
@@ -202,7 +203,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
   }
 
 
-  abstract updateFreeze(left: number);
+  abstract updateFreeze(left: number): void;
 
   scrolled() {
     return this.update(ERenderReason.SCROLLED);
@@ -273,7 +274,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
 
   protected abstract createContextImpl(indexShift: number): IBodyRenderContext;
 
-  protected abstract updateImpl(data: IRankingData[], context: IBodyRenderContext, width: number, height: number, reason): Promise<void>;
+  protected abstract updateImpl(data: IRankingData[], context: IBodyRenderContext, width: number, height: number, reason: ERenderReason): Promise<void>;
 }
 
 export default ABodyRenderer;

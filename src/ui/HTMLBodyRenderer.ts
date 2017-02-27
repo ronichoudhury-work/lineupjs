@@ -30,7 +30,7 @@ const domHTMLMappings = {
     $mean.style('left', x + 'px').style('height', height + 'px');
   },
   slopes: 'svg',
-  updateSlopes($slopes: Selection<any>, width: number, height: number, callback: (d, i) => number) {
+  updateSlopes($slopes: Selection<any>, width: number, height: number, callback: (d: any, i: number) => number) {
     $slopes.attr('width', width).attr('height', height).style('left', (d, i) => callback(d, i) + 'px');
   },
 

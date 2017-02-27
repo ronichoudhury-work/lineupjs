@@ -14,7 +14,7 @@ function clamp(v: number, min: number, max: number) {
 function unique(data: number[]) {
   const s = new Set<number>();
   data.forEach((d) => s.add(d));
-  const r = [];
+  const r: number[] = [];
   s.forEach((d) => r.push(d));
   return r;
 }
@@ -30,6 +30,11 @@ export interface IMappingEditorOptions {
   callback?(newscale: IMappingFunction, filter: {min: number, max: number}): void;
   callbackThisArg?: any;
   triggerCallback?: string;
+}
+
+interface IMappingLine {
+  r: number;
+  n: number;
 }
 
 export default class MappingEditor {
@@ -48,7 +53,7 @@ export default class MappingEditor {
 
   private computeFilter: () => INumberFilter;
 
-  constructor(private parent: HTMLElement, public scale: IMappingFunction, private original: IMappingFunction, private oldFilter: INumberFilter, private dataPromise: Promise<number[]>, options: IMappingEditorOptions) {
+  constructor(parent: HTMLElement, public scale: IMappingFunction, private original: IMappingFunction, private oldFilter: INumberFilter, private dataPromise: Promise<number[]>, options: IMappingEditorOptions) {
     merge(this.options, options);
     //work on a local copy
     this.scale = scale.clone();
@@ -136,7 +141,7 @@ export default class MappingEditor {
 
     $root.select('input.raw_min')
       .property('value', raw2pixel.domain()[0])
-      .on('blur', function () {
+      .on('blur', function (this: HTMLInputElement) {
         const d = raw2pixel.domain();
         d[0] = parseFloat(this.value);
         raw2pixel.domain(d);
@@ -148,7 +153,7 @@ export default class MappingEditor {
       });
     $root.select('input.raw_max')
       .property('value', raw2pixel.domain()[1])
-      .on('blur', function () {
+      .on('blur', function (this: HTMLInputElement) {
         const d = raw2pixel.domain();
         d[1] = parseFloat(this.value);
         raw2pixel.domain(d);
@@ -192,15 +197,15 @@ export default class MappingEditor {
       });
     }
 
-    function createDrag(move) {
+    function createDrag<T>(move: (d: T, i: number)=>void) {
       return behavior.drag()
-        .on('dragstart', function () {
+        .on('dragstart', function (this: SVGCircleElement) {
           select(this)
             .classed('dragging', true)
             .attr('r', options.radius * 1.1);
         })
         .on('drag', move)
-        .on('dragend', function () {
+        .on('dragend', function (this: SVGCircleElement) {
           select(this)
             .classed('dragging', false)
             .attr('r', options.radius);
@@ -208,7 +213,7 @@ export default class MappingEditor {
         });
     }
 
-    let mappingLines = [];
+    let mappingLines: IMappingLine[] = [];
 
     function renderMappingLines() {
       if (!(that.scale instanceof ScaleMappingFunction)) {
@@ -235,7 +240,7 @@ export default class MappingEditor {
         updateDataLines();
       }
 
-      function removePoint(i) {
+      function removePoint(i: number) {
         if (mappingLines.length <= 2) {
           return; //can't remove have to have at least two
         }
@@ -244,7 +249,7 @@ export default class MappingEditor {
         renderMappingLines();
       }
 
-      function addPoint(x) {
+      function addPoint(x: number) {
         const px = clamp(x, 0, width);
         mappingLines.push({
           n: normal2pixel.invert(px),
@@ -267,7 +272,7 @@ export default class MappingEditor {
       $mappingEnter.append('line').attr({
         y1: 0,
         y2: height
-      }).call(createDrag(function (d) {
+      }).call(createDrag(function (this: SVGElement, d: IMappingLine) {
         //drag the line shifts both point in parallel
         const dx = (<any>d3event).dx;
         const nx = clamp(normal2pixel(d.n) + dx, 0, width);
@@ -280,7 +285,7 @@ export default class MappingEditor {
 
         updateScale();
       }));
-      $mappingEnter.append('circle').classed('normalized', true).attr('r', options.radius).call(createDrag(function (d) {
+      $mappingEnter.append('circle').classed('normalized', true).attr('r', options.radius).call(createDrag(function (this: SVGCircleElement, d: IMappingLine) {
         //drag normalized
         const px = clamp((<DragEvent>d3event).x, 0, width);
         d.n = normal2pixel.invert(px);
@@ -289,7 +294,7 @@ export default class MappingEditor {
 
         updateScale();
       }));
-      $mappingEnter.append('circle').classed('raw', true).attr('r', options.radius).attr('cy', height).call(createDrag(function (d) {
+      $mappingEnter.append('circle').classed('raw', true).attr('r', options.radius).attr('cy', height).call(createDrag(function (this: SVGCircleElement, d: IMappingLine) {
         //drag raw
         const px = clamp((<DragEvent>d3event).x, 0, width);
         d.r = raw2pixel.invert(px);
@@ -341,7 +346,7 @@ export default class MappingEditor {
       const toFilterString = (d: number, i: number) => isFinite(d) ? ((i === 0 ? '>' : '<') + d.toFixed(1)) : 'any';
       $root.selectAll('g.left_filter, g.right_filter')
         .data([this.oldFilter.min, this.oldFilter.max])
-        .attr('transform', (d, i) => `translate(${i === 0 ? minFilter : maxFilter},0)`).call(createDrag(function (d, i) {
+        .attr('transform', (d, i) => `translate(${i === 0 ? minFilter : maxFilter},0)`).call(createDrag(function (this: SVGGElement, d: any, i: number) {
 
         //drag normalized
         const px = clamp((<DragEvent>d3event).x, 0, width);
@@ -373,7 +378,7 @@ export default class MappingEditor {
 
     updateRaw();
 
-    $root.select('select').on('change', function () {
+    $root.select('select').on('change', function (this: HTMLSelectElement) {
       const v = this.value;
       if (v === 'linear_invert') {
         that.scale = new ScaleMappingFunction(raw2pixel.domain(), 'linear', [1, 0]);
