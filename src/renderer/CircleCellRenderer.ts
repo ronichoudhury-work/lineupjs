@@ -14,7 +14,6 @@ export default class CircleCellRenderer implements ICellRendererFactory {
   }
 
   createSVG(col: INumberColumn & Column, context: IDOMRenderContext): ISVGCellRenderer {
-    const padding = context.option('rowBarPadding', 1);
     return {
       template: `<g class='bar'>
           <circle class='${col.cssClass}' style='fill: ${col.color}'>

@@ -20,7 +20,7 @@ export default class MappingsFilterDialog extends AFilterDialog<NumberColumn> {
   }
 
   openDialog() {
-    const pos = offset(this.attachment.node()),
+    const pos = offset(<Element>this.attachment.node()),
       original = this.column.getOriginalMapping();
     let bakfilter = this.column.getFilter(),
       bak = this.column.getMapping(),

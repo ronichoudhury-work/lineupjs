@@ -51,7 +51,7 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
           d: path
         });
         attr(<SVGPathElement>n.querySelector('path.boxplotsortpath'), {
-          d: `M${scaled[sortMethod]},${topPadding}L${scaled[sortMethod]},${bottomPos}`
+          d: `M${(<any>scaled)[sortMethod]},${topPadding}L${(<any>scaled)[sortMethod]},${bottomPos}`
         }, {
           display: sortedByMe ? null : 'none'
         });
@@ -112,8 +112,8 @@ export default class BoxplotCellRenderer implements ICellRendererFactory {
         ctx.strokeStyle = 'red';
         ctx.fillStyle = '#ff0700';
         ctx.beginPath();
-        ctx.moveTo(scaled[sortMethod], topPadding);
-        ctx.lineTo(scaled[sortMethod], bottomPos);
+        ctx.moveTo((<any>scaled)[sortMethod], topPadding);
+        ctx.lineTo((<any>scaled)[sortMethod], bottomPos);
         ctx.stroke();
         ctx.fill();
       }

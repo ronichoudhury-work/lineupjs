@@ -11,7 +11,7 @@ import ICellRendererFactory from './ICellRendererFactory';
  * one instance factory shared among strings
  */
 export default class StringCellRenderer implements ICellRendererFactory {
-  private alignments = {
+  private alignments: {[key: string]:ICellRendererFactory}= {
     left: new DefaultCellRenderer(),
     right: new DefaultCellRenderer('text_right', 'right'),
     center: new DefaultCellRenderer('text_center', 'center')

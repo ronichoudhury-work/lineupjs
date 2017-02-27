@@ -174,7 +174,7 @@ abstract class ADataProvider extends AEventDispatcher {
       Ranking.EVENT_ORDER_CHANGED + '.provider', Ranking.EVENT_DIRTY_VALUES + '.provider');
     const that = this;
     //delayed reordering per ranking
-    r.on(Ranking.EVENT_DIRTY_ORDER + '.provider', delayedCall(function (this: {source: Column}) {
+    r.on(Ranking.EVENT_DIRTY_ORDER + '.provider', delayedCall(function (this: {source: Ranking}) {
       that.triggerReorder(this.source);
     }, 100, null));
     this.fire([ADataProvider.EVENT_ADD_RANKING, ADataProvider.EVENT_DIRTY_HEADER, ADataProvider.EVENT_DIRTY_VALUES, ADataProvider.EVENT_DIRTY], r, index);
@@ -352,7 +352,7 @@ abstract class ADataProvider extends AEventDispatcher {
    */
   find(idOrFilter: (col: Column) => boolean | string): Column {
     //convert to function
-    const filter = typeof(idOrFilter) === 'string' ? (col) => col.id === idOrFilter : idOrFilter;
+    const filter = typeof(idOrFilter) === 'string' ? (col: Column) => col.id === idOrFilter : idOrFilter;
 
     for (const ranking of this.rankings) {
       const r = ranking.find(filter);
@@ -711,7 +711,7 @@ abstract class ADataProvider extends AEventDispatcher {
       header: true,
       quote: false,
       quoteChar: '"',
-      filter: (c: Column) => !isSupportType(c)
+      filter: (c: IColumnDesc) => !isSupportType(c)
     }, options);
     //optionally quote not numbers
     function quote(l: string, c?: Column) {
@@ -724,7 +724,7 @@ abstract class ADataProvider extends AEventDispatcher {
     const columns = ranking.flatColumns.filter((c) => options.filter(c.desc));
     const order = ranking.getOrder();
     return this.view(order).then((data) => {
-      const r = [];
+      const r: string[]= [];
       if (options.header) {
         r.push(columns.map((d) => quote(d.label)).join(options.separator));
       }

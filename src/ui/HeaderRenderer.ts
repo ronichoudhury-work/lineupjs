@@ -8,7 +8,7 @@ import Column, {IStatistics, ICategoricalStatistics, IFlatColumn} from '../model
 import StringColumn from '../model/StringColumn';
 import Ranking from '../model/Ranking';
 import {IMultiLevelColumn, isMultiLevelColumn} from '../model/CompositeColumn';
-import NumberColumn, {isNumberColumn, INumberColumn} from '../model/NumberColumn';
+import NumberColumn, {isNumberColumn} from '../model/NumberColumn';
 import CategoricalColumn, {isCategoricalColumn} from '../model/CategoricalColumn';
 import RankColumn from '../model/RankColumn';
 import StackColumn, {createDesc as createStackDesc} from '../model/StackColumn';
@@ -529,13 +529,13 @@ export default class HeaderRenderer {
         const sColumns = sShifts.map((d) => d.col);
         that.renderColumns(sColumns, sShifts, d3.select(this), clazz + (clazz.substr(clazz.length - 2) !== '_i' ? '_i' : ''));
       }
-    }).select('div.lu-label').call(dropAble(['application/caleydo-lineup-column-number-ref', 'application/caleydo-lineup-column-number'], (data, d: IMultiLevelColumn, copy) => {
+    }).select('div.lu-label').call(dropAble(['application/caleydo-lineup-column-number-ref', 'application/caleydo-lineup-column-number'], (data, d: Column, copy) => {
       const col: Column = resolveDrop(data, copy);
-      return d.push(col) != null;
+      return (<IMultiLevelColumn>d).push(col) != null;
     }));
 
     // drag columns on top of each
-    $headers.filter((d) => d.parent instanceof Ranking && isNumberColumn(d) && !isMultiLevelColumn(d)).select('div.lu-label').call(dropAble(['application/caleydo-lineup-column-number-ref', 'application/caleydo-lineup-column-number'], (data, d: Column & INumberColumn, copy) => {
+    $headers.filter((d) => d.parent instanceof Ranking && isNumberColumn(d) && !isMultiLevelColumn(d)).select('div.lu-label').call(dropAble(['application/caleydo-lineup-column-number-ref', 'application/caleydo-lineup-column-number'], (data, d: Column, copy) => {
       const col: Column = resolveDrop(data, copy);
       const ranking = d.findMyRanker();
       const index = ranking.indexOf(d);

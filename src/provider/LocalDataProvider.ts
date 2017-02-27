@@ -30,7 +30,7 @@ function computeStats(arr: any[], indices: number[], acc: (row: any, index: numb
       hist: []
     };
   }
-  const indexAccessor = (a, i) => acc(a, indices[i]);
+  const indexAccessor = (a: any, i: number) => acc(a, indices[i]);
   const hist = d3.layout.histogram().value(indexAccessor);
   if (range) {
     hist.range(() => range);
@@ -188,7 +188,6 @@ export default class LocalDataProvider extends ACommonDataProvider {
 
   viewRaw(indices: number[]) {
     //filter invalid indices
-    const l = this._data.length;
     return indices.map((index) => this._data[index]);
   }
 

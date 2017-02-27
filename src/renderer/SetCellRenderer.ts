@@ -11,7 +11,7 @@ import {select as d3select} from 'd3';
 export default class SetCellRenderer implements ICellRendererFactory {
   private static setPathCalculate(setData: boolean[], cellDimension: number) {
 
-    const catindexes = [];
+    const catindexes: number[] = [];
     setData.forEach((d: boolean, i: number) => (d) ? catindexes.push(i) : -1);
 
     const left = (catindexes[0] * cellDimension) + (cellDimension / 2);
