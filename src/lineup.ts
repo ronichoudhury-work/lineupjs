@@ -200,7 +200,7 @@ export default class LineUp extends AEventDispatcher {
     if (this.config.body.visibleRowsOnly) {
       this.contentScroller = new ContentScroller(<Element>this.$container.node(), this.body.node, {
         backupRows: this.config.body.backupScrollRows,
-        minRowHeight: <number>this.config.body.rowHeight,
+        minRowHeight: (typeof this.config.body.rowHeight === 'number') ? this.config.body.rowHeight : 20,
         topShift: () => this.header.currentHeight()
       });
       this.contentScroller.on(ContentScroller.EVENT_SCROLL, (top, left) => {

@@ -184,7 +184,7 @@ export class ContentScroller extends AEventDispatcher {
     /**
      * the height of one row in pixel
      */
-    minRowHeight: 10
+    minRowHeight: 20
   };
 
   private prevScrollTop = 0;

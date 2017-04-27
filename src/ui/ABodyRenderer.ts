@@ -184,7 +184,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
 
       option: findOption,
 
-      rowHeight: (index: number) => rowBounds(index).height - options.rowPadding,
+      rowHeight: (index: number) => rowBounds(index + indexShift).height - options.rowPadding,
 
       renderer(col: Column) {
         return creator(col, options.renderers, this);
@@ -219,27 +219,26 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
     if (typeof this.options.rowHeight === 'number') {
       const rowHeight = this.options.rowHeight;
       const height = rowHeight * maxElems;
-      const rowHeightGenerator = (i: number) => i * rowHeight;
       const rowBounds = (i: number) => ({y: i * rowHeight, height: rowHeight});
-      return {height, maxElems, rowHeightGenerator, rowBounds};
+      return {height, maxElems, rowBounds};
     }
     // if empty
     if (maxElems === 0 || rankings.length === 0) {
       // doesn't matter
-      return {height: 0, maxElems, rowHeightGenerator: (i) => 0, rowBounds: (i) => ({y: 0, height: 0})};
+      return {height: 0, maxElems, rowBounds: (i) => ({y: 0, height: 0})};
     }
     { // complex function given
       const ranking = rankings[0].getOrder();
       const rowHeightGenerator = (<IRowHeightGenerator>this.options.rowHeight)(ranking, this.data);
 
-      const rowHeights = (new Array(ranking.length)).map((_, i) => rowHeightGenerator(i));
+      const rowHeights = ranking.map((_, i) => rowHeightGenerator(i));
       const postSum = [];
       const height = rowHeights.reduce((acc, height) => {
         postSum.push(acc);
         return acc + height;
       }, 0);
       const rowBounds = (i: number) => ({y : postSum[i], height: rowHeights[i]});
-      return {height, maxElems, rowHeightGenerator, rowBounds};
+      return {height, maxElems, rowBounds};
     }
   }
 
@@ -248,8 +247,8 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
    */
   update(reason = ERenderReason.DIRTY) {
     const rankings = this.data.getRankings();
-    const {height, maxElems, rowHeightGenerator, rowBounds} = this.computeRowHeight(rankings);
-    const visibleRange = this.slicer(0, maxElems, rowHeightGenerator);
+    const {height, maxElems, rowBounds} = this.computeRowHeight(rankings);
+    const visibleRange = this.slicer(0, maxElems, (i) => rowBounds(i).y);
     const orderSlicer = (order: number[]) => {
       if (visibleRange.from === 0 && order.length <= visibleRange.to) {
         return order;
