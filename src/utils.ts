@@ -5,6 +5,7 @@
 import {dispatch, select, event as d3event, Dispatch} from 'd3';
 import Column from './model/Column';
 import {IDOMCellRenderer} from './renderer/IDOMCellRenderers';
+import ADataProvider from './provider/ADataProvider';
 
 /**
  * create a delayed call, can be called multiple times but only the last one at most delayed by timeToDelay will be executed
@@ -152,10 +153,14 @@ export function offset(element) {
   };
 }
 
+export interface IRowHeightGenerator {
+  (order: number[], provider: ADataProvider): (index: number)=>number;
+}
+
 export interface IContentScrollerOptions {
   topShift?(): number;
   backupRows?: number;
-  rowHeight?: number;
+  minRowHeight?: number;
 }
 
 /**
@@ -179,7 +184,7 @@ export class ContentScroller extends AEventDispatcher {
     /**
      * the height of one row in pixel
      */
-    rowHeight: 10
+    minRowHeight: 10
   };
 
   private prevScrollTop = 0;
@@ -249,7 +254,7 @@ export class ContentScroller extends AEventDispatcher {
      return [0, data.length];
      }*/
     if (top > 0) {
-      i = Math.round(top / this.options.rowHeight);
+      i = Math.round(top / this.options.minRowHeight);
       //count up till really even partial rows are visible
       while (i >= start && row2y(i + 1) > top) {
         i--;
@@ -257,7 +262,7 @@ export class ContentScroller extends AEventDispatcher {
       i -= backupRows; //one more row as backup for scrolling
     }
     { //some parts from the bottom aren't visible
-      j = Math.round(bottom / this.options.rowHeight);
+      j = Math.round(bottom / this.options.minRowHeight);
       //count down till really even partial rows are visible
       while (j <= length && row2y(j - 1) < bottom) {
         j++;
@@ -276,7 +281,7 @@ export class ContentScroller extends AEventDispatcher {
     //at least one row changed
     //console.log(top, left);
     this.fire(ContentScroller.EVENT_SCROLL, top, left);
-    if (Math.abs(this.prevScrollTop - top) >= this.options.rowHeight * this.options.backupRows) {
+    if (Math.abs(this.prevScrollTop - top) >= this.options.minRowHeight * this.options.backupRows) {
       //we scrolled out of our backup rows, so we have to redraw the content
       this.prevScrollTop = top;
       this.fire(ContentScroller.EVENT_REDRAW);

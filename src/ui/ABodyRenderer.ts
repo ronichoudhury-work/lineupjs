@@ -3,7 +3,7 @@
  */
 
 import * as d3 from 'd3';
-import {merge, delayedCall, AEventDispatcher} from '../utils';
+import {merge, delayedCall, AEventDispatcher, IRowHeightGenerator} from '../utils';
 import {Ranking, isNumberColumn} from '../model';
 import Column, {IStatistics, ICategoricalStatistics} from '../model/Column';
 import {IMultiLevelColumn, isMultiLevelColumn} from '../model/CompositeColumn';
@@ -14,6 +14,11 @@ import {renderers as defaultRenderers} from '../renderer/index';
 
 export interface ISlicer {
   (start: number, length: number, row2y: (i: number) => number): {from: number; to: number};
+}
+
+export interface IRowBounds {
+  y: number;
+  height: number;
 }
 
 export interface IBodyRenderer extends AEventDispatcher {
@@ -60,7 +65,7 @@ export interface IRankingData {
 }
 
 export interface IBodyRendererOptions {
-  rowHeight?: number;
+  rowHeight?: number|IRowHeightGenerator;
   rowPadding?: number;
   rowBarPadding?: number;
   rowBarTopPadding?: number;
@@ -154,7 +159,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
     this.fire(ABodyRenderer.EVENT_RENDER_FINISHED, this);
   }
 
-  protected createContext(indexShift: number, creator: (col: Column, renderers: {[key: string]: ICellRendererFactory}, context: IRenderContext<any>) => any): IBodyRenderContext {
+  protected createContext(indexShift: number, rowBounds: (index: number) => IRowBounds, creator: (col: Column, renderers: {[key: string]: ICellRendererFactory}, context: IRenderContext<any>) => any): IBodyRenderContext {
     const options = this.options;
 
     function findOption(key: string, defaultValue: any) {
@@ -172,14 +177,14 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
     }
 
     return {
-      cellY: (index: number) => (index + indexShift) * (this.options.rowHeight),
-      cellPrevY: (index: number) => (index + indexShift) * (this.options.rowHeight),
+      cellY: (index: number) => rowBounds(index + indexShift).y,
+      cellPrevY: (index: number) => rowBounds(index + indexShift).y,
 
       idPrefix: options.idPrefix,
 
       option: findOption,
 
-      rowHeight: () => options.rowHeight - options.rowPadding,
+      rowHeight: (index: number) => rowBounds(index).height - options.rowPadding,
 
       renderer(col: Column) {
         return creator(col, options.renderers, this);
@@ -208,14 +213,43 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
     return this.update(ERenderReason.SCROLLED);
   }
 
+  private computeRowHeight(rankings: Ranking[]) {
+    const maxElems = d3.max(rankings, (d) => d.getOrder().length) || 0;
+    // simple case
+    if (typeof this.options.rowHeight === 'number') {
+      const rowHeight = this.options.rowHeight;
+      const height = rowHeight * maxElems;
+      const rowHeightGenerator = (i: number) => i * rowHeight;
+      const rowBounds = (i: number) => ({y: i * rowHeight, height: rowHeight});
+      return {height, maxElems, rowHeightGenerator, rowBounds};
+    }
+    // if empty
+    if (maxElems === 0 || rankings.length === 0) {
+      // doesn't matter
+      return {height: 0, maxElems, rowHeightGenerator: (i) => 0, rowBounds: (i) => ({y: 0, height: 0})};
+    }
+    { // complex function given
+      const ranking = rankings[0].getOrder();
+      const rowHeightGenerator = (<IRowHeightGenerator>this.options.rowHeight)(ranking, this.data);
+
+      const rowHeights = (new Array(ranking.length)).map((_, i) => rowHeightGenerator(i));
+      const postSum = [];
+      const height = rowHeights.reduce((acc, height) => {
+        postSum.push(acc);
+        return acc + height;
+      }, 0);
+      const rowBounds = (i: number) => ({y : postSum[i], height: rowHeights[i]});
+      return {height, maxElems, rowHeightGenerator, rowBounds};
+    }
+  }
+
   /**
    * render the body
    */
   update(reason = ERenderReason.DIRTY) {
     const rankings = this.data.getRankings();
-    const maxElems = d3.max(rankings, (d) => d.getOrder().length) || 0;
-    const height = this.options.rowHeight * maxElems;
-    const visibleRange = this.slicer(0, maxElems, (i) => i * this.options.rowHeight);
+    const {height, maxElems, rowHeightGenerator, rowBounds} = this.computeRowHeight(rankings);
+    const visibleRange = this.slicer(0, maxElems, rowHeightGenerator);
     const orderSlicer = (order: number[]) => {
       if (visibleRange.from === 0 && order.length <= visibleRange.to) {
         return order;
@@ -223,7 +257,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
       return order.slice(visibleRange.from, Math.min(order.length, visibleRange.to));
     };
 
-    const context = this.createContextImpl(visibleRange.from);
+    const context = this.createContextImpl(visibleRange.from, rowBounds);
     const orders = rankings.map((r) => orderSlicer(r.getOrder()));
     const data = this.data.fetch(orders);
 
@@ -271,7 +305,7 @@ abstract class ABodyRenderer extends AEventDispatcher implements IBodyRenderer {
     return this.updateImpl(rdata, context, totalWidth, height, reason).then(this.fireFinished.bind(this));
   }
 
-  protected abstract createContextImpl(indexShift: number): IBodyRenderContext;
+  protected abstract createContextImpl(indexShift: number, rowBounds: (index: number) => IRowBounds): IBodyRenderContext;
 
   protected abstract updateImpl(data: IRankingData[], context: IBodyRenderContext, width: number, height: number, reason): Promise<void>;
 }

@@ -8,7 +8,7 @@ import Column, {IStatistics} from '../model/Column';
 import SelectionColumn from '../model/SelectionColumn';
 import {createCanvas} from '../renderer/index';
 import DataProvider, {IDataRow}  from '../provider/ADataProvider';
-import ABodyRenderer, {ISlicer, IRankingData, IBodyRenderContext, ERenderReason} from './ABodyRenderer';
+import ABodyRenderer, {ISlicer, IRankingData, IBodyRenderContext, ERenderReason, IRowBounds} from './ABodyRenderer';
 import {ICanvasRenderContext} from '../renderer/RendererContexts';
 
 export interface IStyleOptions {
@@ -44,6 +44,7 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
   protected currentHover = -1;
 
   private lastShifts: {column: Column; shift: number}[] = [];
+  private lastRowStarts: number[] = [];
 
   constructor(data: DataProvider, parent: Element, slicer: ISlicer, options: ICanvasBodyRendererOptions = {}) {
     super(data, parent, slicer, 'div', merge({}, BodyCanvasRenderer.CUSTOM_OPTIONS, options));
@@ -62,8 +63,13 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
   }
 
   private rowUnderMouse(y: number) {
-    const rowHeight = this.options.rowHeight;
-    return Math.floor((y + 1) / rowHeight);
+    if (typeof this.options.rowHeight === 'number') {
+      const rowHeight = this.options.rowHeight;
+      return Math.floor((y + 1) / rowHeight);
+    } else if (this.lastRowStarts.length > 0) {
+      // find the row that is bigger than the given position -1 (previous)
+      return this.lastRowStarts.findIndex((start) => start < (y+1)) - 1;
+    }
   }
 
   private itemUnderMouse(xy: [number, number]) {
@@ -271,8 +277,8 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
     ctx.restore();
   }
 
-  protected createContextImpl(indexShift: number): ICanvasRenderContext&IBodyRenderContext {
-    const base: any = this.createContext(indexShift, createCanvas);
+  protected createContextImpl(indexShift: number, rowBounds: (index: number) => IRowBounds): ICanvasRenderContext&IBodyRenderContext {
+    const base: any = this.createContext(indexShift, rowBounds, createCanvas);
     base.hovered = this.isHovered.bind(this);
     base.selected = (dataIndex: number) => this.data.isSelected(dataIndex);
     base.bodyDOMElement = <HTMLElement>this.$node.node();
@@ -306,6 +312,11 @@ export default class BodyCanvasRenderer extends ABodyRenderer {
     }).style('margin-top', firstLine + 'px');
 
     this.lastShifts = this.computeShifts(data);
+    if (data.length === 0) {
+      this.lastRowStarts = [];
+    } else {
+      this.lastRowStarts = data[0].order.map((o, i) => context.cellY(i));
+    }
 
 
     const ctx = (<HTMLCanvasElement>$canvas.node()).getContext('2d');

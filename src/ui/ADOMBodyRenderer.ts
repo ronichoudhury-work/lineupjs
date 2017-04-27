@@ -12,7 +12,8 @@ import ABodyRenderer, {
   IRankingColumnData,
   IRankingData,
   IBodyRenderContext,
-  ERenderReason} from './ABodyRenderer';
+  ERenderReason, IRowBounds
+} from './ABodyRenderer';
 import ICellRendererFactory from '../renderer/ICellRendererFactory';
 import {IDOMCellRenderer} from '../renderer/IDOMCellRenderers';
 
@@ -129,7 +130,7 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
       //order for frozen in html + set the size in html to have a proper background instead of a clip-path
       const maxFrozen = data.length === 0 || data[0].frozen.length === 0 ? 0 : d3.max(data[0].frozen, (f) => f.shift + f.column.getWidth());
       $rows.select(g + '.frozen').each(function (d, i, j) {
-        domMapping.setSize(this, maxFrozen, that.options.rowHeight);
+        domMapping.setSize(this, maxFrozen, context.rowHeight(i));
         toWait.push(updateColumns(this, data[j], i, data[j].frozen));
       });
       $rows.exit().remove();
@@ -233,8 +234,8 @@ abstract class ABodyDOMRenderer extends ABodyRenderer {
 
   protected abstract updateClipPaths(data: IRankingData[], context: IBodyRenderContext&IDOMRenderContext, height: number);
 
-  protected createContextImpl(indexShift: number): IBodyRenderContext {
-    return this.createContext(indexShift, this.domMapping.creator);
+  protected createContextImpl(indexShift: number, rowBounds: (index: number) => IRowBounds): IBodyRenderContext {
+    return this.createContext(indexShift, rowBounds, this.domMapping.creator);
   }
 
   protected updateImpl(data: IRankingData[], context: IBodyRenderContext, width: number, height: number, reason: ERenderReason) {

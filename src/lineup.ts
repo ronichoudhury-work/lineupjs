@@ -17,7 +17,7 @@ import {
 } from './ui';
 import {IHeaderRendererOptions} from './ui/HeaderRenderer';
 import {IBodyRendererOptions, default as ABodyRenderer} from './ui/ABodyRenderer';
-import {AEventDispatcher, ContentScroller, merge}  from './utils';
+import {AEventDispatcher, ContentScroller, IRowHeightGenerator, merge}  from './utils';
 import {scale as d3scale, selection, select, Selection} from 'd3';
 import ICellRendererFactory from './renderer/ICellRendererFactory';
 
@@ -200,7 +200,7 @@ export default class LineUp extends AEventDispatcher {
     if (this.config.body.visibleRowsOnly) {
       this.contentScroller = new ContentScroller(<Element>this.$container.node(), this.body.node, {
         backupRows: this.config.body.backupScrollRows,
-        rowHeight: this.config.body.rowHeight,
+        minRowHeight: <number>this.config.body.rowHeight,
         topShift: () => this.header.currentHeight()
       });
       this.contentScroller.on(ContentScroller.EVENT_SCROLL, (top, left) => {
@@ -309,11 +309,12 @@ export default class LineUp extends AEventDispatcher {
     const order = ranking.getOrder();
     //relative order
     const indices = dataIndices.map((d) => order.indexOf(d)).sort((a, b) => a - b);
+    const generator = typeof(this.config.body.rowHeight) === 'number' ? (i) => i * <number>this.config.body.rowHeight : (<IRowHeightGenerator>this.config.body.rowHeight)(order, this.data);
     if (this.contentScroller) {
-      this.contentScroller.scrollIntoView(0, order.length, indices[0], (i) => i * this.config.body.rowHeight);
+      this.contentScroller.scrollIntoView(0, order.length, indices[0], generator);
     } else {
       const container = (<HTMLElement>this.$container.node());
-      container.scrollTop = indices[0] * this.config.body.rowHeight;
+      container.scrollTop = generator(indices[0]);
     }
     //fake hover in 100ms - TODO right timing
     setTimeout(() => {
